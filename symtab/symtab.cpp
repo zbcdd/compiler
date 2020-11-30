@@ -2,9 +2,96 @@
 #include <cstdio>
 #include <cstring>
 
+// arr_info
+TYPE arr_info::get_type()
+{
+    return this -> type;
+}
+
+TYPE arr_info::get_length()
+{
+    return this -> length;
+}
+
+// struct_info
+void struct_info::add_var(std::string name, symbol* sym)
+{
+    for (int i = 0; i < (this -> name_list).size(); i ++) {
+        if (name == (this -> name_list)[i]) {
+            // ERROR!!!
+            return;
+        }
+    }
+    (this -> name_list).push_back(name);
+    (this -> sym_list).push_back(sym);
+}
+
+std::vector<std::string>* struct_info::get_name_list()
+{
+    return &(this -> name_list);
+}
+
+std::vector<symbol*>* struct_info::get_sym_list()
+{
+    return &(this -> sym_list);
+}
+
+// func_info
+TYPE func_info::get_type()
+{
+    return this -> type;
+}
+
+std::vector<symbol*>* func_info::get_param_list()
+{
+    return &(this -> param_list);
+}
+
+void func_info::add_param(symbol* sym)
+{
+    (this -> param_list).push_back(sym);
+}
+
+// symbol
+TYPE symbol::get_type()
+{
+    return this -> type;
+}
+
+int symbol::get_value()
+{
+    return this -> value;
+}
+
+sym_info* symbol::get_info()
+{
+    return this -> info;
+}
+
+void symbol::set_pos(int pos)
+{
+    this -> pos = pos;
+}
+
+int symbol::get_pos()
+{
+    return this -> pos;
+}
+
+void symbol::set_size(int size)
+{
+    this -> size = size;
+}
+
+int symbol::get_size()
+{
+    return this -> size;
+}
+
+// symtab_list
 void symtab_list::init_list()
 {
-    push_symtab();
+   this -> push_symtab();
 }
 
 void symtab_list::push_symtab()
@@ -31,7 +118,7 @@ int symtab_list::insert_symbol(std::string name, symbol* sym)
     if (cur_symtab -> count(name) != 0) 
         return 0;  // 重复定义
     (*cur_symtab)[name] = sym; 
-    return 1;  // 可以添加
+    return 1;  // 添加成功
 }
 
 symbol* symtab_list::find_symbol(std::string name)

@@ -1,4 +1,4 @@
-int factorial(int n) {
+int factorial(int n, int m) {
 	int temp;
 	if (n == 1)
 		return n;

@@ -53,7 +53,6 @@ ASTNode* ASTroot;
 primary_expression
 	: IDENTIFIER {
         $$ = new ASTNode(NodeType::ID, ID_DEC, idx ++, $1);
-        list_ptr -> insert_symbol($1, new symbol(TYPE::INT_TYPE, atoi($1)));
     }
 	| CONSTANT {
         $$ = new ASTNode(NodeType::CONST, CONST_DEC, idx ++, $1);
@@ -367,6 +366,7 @@ init_declarator_list
 init_declarator
 	: declarator {
         $$ = $1;
+        // if (list_ptr -> find_symbol())
     }
 	| declarator '=' initializer {
         $$ = new ASTNode(NodeType::INIT, "Initializer", idx ++, "op:=");
