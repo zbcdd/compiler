@@ -7,6 +7,8 @@ L           [a-zA-Z_]
 #include "./ast/AST.h"
 #include "parser.tab.h"
 
+extern symtab_list* list_ptr;
+
 void yyerror(char const *s);
 void count(char const*, char const*);
 %}
@@ -32,7 +34,6 @@ void count(char const*, char const*);
 "struct"		{ count("STRUCT", "---"); return(STRUCT); }
 "void"			{ count("VOID", "---"); return(VOID); }
 "while"			{ count("WHILE", "---"); return(WHILE); }
-"print"         { count("PRINT", "---"); return(PRINT); }
 "cin"           { count("CIN", "---"); return(CIN); }
 "cout"          { count("COUT", "---"); return(COUT); }
 
@@ -49,7 +50,7 @@ void count(char const*, char const*);
 "=="			{ count("REL_OP", "EQ_OP"); return(EQ_OP); }
 "!="			{ count("REL_OP", "NE_OP"); return(NE_OP); }
 ";"			    { count("SEMICOLON", "---"); return(';'); }
-"{"		        { count("LBRACE", "---"); return('{'); }
+"{"		        { count("LBRACE", "---"); list_ptr -> push_symtab(); return('{');}
 "}"		        { count("RBRACE", "---"); return('}'); }
 ","			    { count("COMA", "---"); return(','); }
 "="			    { count("ASSIGN", "---"); return('='); }

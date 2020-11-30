@@ -17,21 +17,20 @@ int idx = 0;
 symtab_list* list_ptr;
 ASTNode* ASTroot;
 %}
+%union {
+    ASTNode* node;
+    char* str;
+}
 %token<str> IDENTIFIER CONSTANT
 %token<node> PTR_OP LEFT_OP RIGHT_OP LE_OP GE_OP EQ_OP NE_OP
 %token<node> AND_OP OR_OP
 %token<node> INT VOID
 %token<node> STRUCT
 %token<node> IF ELSE WHILE DO FOR CONTINUE BREAK RETURN
-%token<node> PRINT
 %token<node> CIN COUT
 
 %start translation_unit
 
-%union {
-    ASTNode* node;
-    char* str;
-}
 
 %type<node> primary_expression postfix_expression input_expression direct_input_expression
 %type<node> output_expression direct_output_expression argument_expression_list pow_expression
@@ -349,6 +348,20 @@ declaration
 	| type_specifier init_declarator_list ';' {
         $$ = new ASTNode(NodeType::VAR_DECLARATION, "Var Declaration", idx ++);
         $$ -> addChild($1); $$ -> addChild($2);
+        std::vector<ASTNode*>* children = $2 -> getChildren();
+        for (auto iter = children -> begin(); iter != children -> end(); iter ++) {
+            ASTNode* cur_node = *iter;
+            if (cur_node -> temp_symbol -> get_type() != TYPE::ARR_TYPE)
+                cur_node -> temp_symbol -> set_type(TYPE::INT_TYPE);  // 不是arr这里就应该是int
+            else {  // 是arr
+                arr_info* cur_info = new arr_info();
+                if ($1 -> name == "int")
+                    cur_info -> set_type(TYPE::INT_TYPE);
+                else
+                    cur_info -> set_type(TYPE::STRUCT_TYPE);
+                cur_node -> temp_symbol -> set_info(cur_info); 
+            }
+        }
     }
 	;
 
@@ -365,12 +378,22 @@ init_declarator_list
 
 init_declarator
 	: declarator {
+        if (list_ptr -> check_dup($1 -> name)) {  // 判重
+            printf("重复 %s\n", ($1 -> name).c_str());
+            yyerror("duplicate var declaration");
+        }
+        list_ptr -> insert_symbol($1 -> name, $1 -> temp_symbol);  // 转正了
         $$ = $1;
-        // if (list_ptr -> find_symbol())
     }
 	| declarator '=' initializer {
+        if (list_ptr -> check_dup($1 -> name)) {  // 判重
+            printf("重复 %s\n", ($1 -> name).c_str());
+            yyerror("duplicate var declaration");
+        }
+        list_ptr -> insert_symbol($1 -> name, $1 -> temp_symbol);  // 转正了
         $$ = new ASTNode(NodeType::INIT, "Initializer", idx ++, "op:=");
         $$ -> addChild($1); $$ -> addChild($3);
+        $$ -> temp_symbol = $1 -> temp_symbol;
     }
 	;
 
@@ -438,17 +461,27 @@ declarator
 direct_declarator
 	: IDENTIFIER {
         $$ = new ASTNode(NodeType::VAR_DECLARATION, "Var Declaration", idx ++, $1);
+        $$ -> temp_symbol = new symbol($1);
     }
 	| '(' declarator ')' {
         $$ = $2;
     }
-	| direct_declarator '[' assignment_expression ']' {
-        $$ = new ASTNode(NodeType::ARR_DECLARATION, "Arr Declaration", idx ++, "op:[]");
-        $$ -> addChild($1); $$ -> addChild($3);
+	| direct_declarator '[' CONSTANT ']' {
+        $$ = new ASTNode(NodeType::ARR_DECLARATION, "Arr Declaration", idx ++, $1 -> name);
+        $$ -> addChild($1); $$ -> addChild(new ASTNode(NodeType::CONST, CONST_DEC, idx ++, $3));
+        $$ -> temp_symbol = $1 -> temp_symbol;
+        $$ -> temp_symbol -> set_type(TYPE::ARR_TYPE);  // 数组
+        arr_info* cur = new arr_info();
+        cur -> set_length(atoi($3));
+        $$ -> temp_symbol -> set_info(cur);
     }
     | direct_declarator '(' parameter_list ')' {
         $$ = new ASTNode(NodeType::PARAM_DECLARATION, "Param Declaration", idx ++);
         $$ -> addChild($1); $$ -> addChild($3);
+        $$ -> temp_symbol -> set_type(TYPE::FUNC_TYPE);  // 函数
+        func_info* cur = new func_info();
+        // 将parameter_list里面的symbol加进来 (+++)
+        $$ -> temp_symbol -> set_info(cur);
     }
 	| direct_declarator '(' identifier_list ')' {
         $$ = new ASTNode(NodeType::VAR_DECLARATION, "Argument Declaration", idx ++);
@@ -456,6 +489,10 @@ direct_declarator
     }
 	| direct_declarator '(' ')' {
         $$ = $1;
+        $$ -> temp_symbol -> set_type(TYPE::FUNC_TYPE);  // 函数
+        func_info* cur = new func_info();
+        // 没有参数
+        $$ -> temp_symbol -> set_info(cur);
     }
 	;
 
@@ -506,7 +543,7 @@ initializer_list
         $$ = new ASTNode(NodeType::INIT_LIST, "Initializer List", idx ++);
         $$ -> addChild($1);
     }
-	| initializer_list ',' initializer{
+	| initializer_list ',' initializer {
         $$ = $1;
         $$ -> addChild($3);
     }
@@ -533,8 +570,13 @@ statement
 compound_statement
 	: '{' '}' {
         $$ = new ASTNode(NodeType::COMPOUND_STMT, "Compound Statement", idx ++);
+        list_ptr -> pop_symtab();  // 弹出符号表
+        printf("弹出符号表\n");
     }
 	| '{' block_item_list '}' {
+        list_ptr -> print_symtab_list();
+        list_ptr -> pop_symtab();  // 弹出符号表
+        printf("弹出符号表(先打印再弹出)\n");
         $$ = $2;
         $$ -> msg = "Compound Statament";
     }

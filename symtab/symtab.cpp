@@ -8,7 +8,7 @@ TYPE arr_info::get_type()
     return this -> type;
 }
 
-TYPE arr_info::get_length()
+int arr_info::get_length()
 {
     return this -> length;
 }
@@ -44,23 +44,48 @@ TYPE func_info::get_type()
 
 std::vector<symbol*>* func_info::get_param_list()
 {
-    return &(this -> param_list);
+    return (this -> param_list);
 }
 
 void func_info::add_param(symbol* sym)
 {
-    (this -> param_list).push_back(sym);
+    this -> param_list -> push_back(sym);
 }
 
 // symbol
+void symbol::set_name(std::string name)
+{
+    this -> name = name;
+}
+
+std::string symbol::get_name()
+{
+    return this -> name;
+}
+
+void symbol::set_type(TYPE type)
+{
+    this -> type = type;
+}
+
 TYPE symbol::get_type()
 {
     return this -> type;
 }
 
+void symbol::set_value(int value)
+{
+    this -> value = value;
+}
+
 int symbol::get_value()
 {
     return this -> value;
+}
+
+void symbol::set_info(sym_info* info)
+{
+    this -> info = info;
 }
 
 sym_info* symbol::get_info()
@@ -121,6 +146,12 @@ int symtab_list::insert_symbol(std::string name, symbol* sym)
     return 1;  // 添加成功
 }
 
+int symtab_list::check_dup(std::string name)
+{
+    std::unordered_map<std::string, symbol*>* cur_symtab = (this -> list).back();
+    return cur_symtab -> count(name);
+}
+
 symbol* symtab_list::find_symbol(std::string name)
 {
     for (auto iter = (this -> list).rbegin(); iter != (this -> list).rend(); iter ++)
@@ -137,7 +168,7 @@ void symtab_list::print_symtab(int idx, std::unordered_map<std::string, symbol*>
     printf("symtab_list: NO.%d:\n", idx);
     for (auto iter = (*cur_symtab).begin(); iter != (*cur_symtab).end(); iter ++)
     { 
-        printf("name: %s type: %d value: %d\n", (iter -> first).c_str(), iter -> second -> type, iter -> second -> value);
+        printf("name: %s type: %d value: %d\n", (iter -> first).c_str(), iter -> second -> get_type(), iter -> second -> get_value());
     }
 }
 

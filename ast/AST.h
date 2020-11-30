@@ -37,12 +37,14 @@ private:
 public:
     std::string msg;
     std::string name;
+    symbol* temp_symbol;
     ASTNode();
     ASTNode(NodeType nodeType);
     ASTNode(NodeType nodeType, std::string msg);
     ASTNode(NodeType nodeType, std::string msg, int idx);
     ASTNode(NodeType nodeType, std::string msg, int idx, std::string name);
     void addChild(ASTNode* child);
+    std::vector<ASTNode*>* getChildren() {return &(this -> children);};
     void setIdx(int idx);
     void setName(std::string name);
     void printTree(ASTNode* root, int layer, bool endOrFirst, std::string);
