@@ -15,6 +15,7 @@ int main()
 {
     struct A a, aa;
     int b, bb;
+    int c;
     int c[10], cc[20];
     b = bb;
     c[5] = cc[13];

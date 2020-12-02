@@ -1,8 +1,8 @@
-struct A
-{
-    int a;
-    int b;
-};
+// struct A
+// {
+//     int a;
+//     int b;
+// };
 int a = 0;
 
 int main() {

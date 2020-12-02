@@ -50,7 +50,7 @@ void count(char const*, char const*);
 "=="			{ count("REL_OP", "EQ_OP"); return(EQ_OP); }
 "!="			{ count("REL_OP", "NE_OP"); return(NE_OP); }
 ";"			    { count("SEMICOLON", "---"); return(';'); }
-"{"		        { count("LBRACE", "---"); list_ptr -> push_symtab(); return('{');}
+"{"		        { count("LBRACE", "---"); return('{'); }
 "}"		        { count("RBRACE", "---"); return('}'); }
 ","			    { count("COMA", "---"); return(','); }
 "="			    { count("ASSIGN", "---"); return('='); }

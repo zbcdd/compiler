@@ -42,6 +42,7 @@ ASTNode* ASTroot;
 %type<node> statement compound_statement block_item_list block_item expression_statement 
 %type<node> selection_statement iteration_statement jump_statement translation_unit external_declaration 
 %type<node> function_definition
+%type<node> enter_scope
 
 
 %locations
@@ -476,15 +477,16 @@ direct_declarator
         $$ -> temp_symbol -> set_info(cur);
     }
     | direct_declarator '(' parameter_list ')' {
-        $$ = new ASTNode(NodeType::PARAM_DECLARATION, "Param Declaration", idx ++);
+        $$ = new ASTNode(NodeType::PARAM_DECLARATION, "Function Declaration", idx ++);
         $$ -> addChild($1); $$ -> addChild($3);
+        $$ -> temp_symbol = $1 -> temp_symbol;
         $$ -> temp_symbol -> set_type(TYPE::FUNC_TYPE);  // 函数
         func_info* cur = new func_info();
         // 将parameter_list里面的symbol加进来 (+++)
         $$ -> temp_symbol -> set_info(cur);
     }
 	| direct_declarator '(' identifier_list ')' {
-        $$ = new ASTNode(NodeType::VAR_DECLARATION, "Argument Declaration", idx ++);
+        $$ = new ASTNode(NodeType::VAR_DECLARATION, "Function Call", idx ++);
         $$ -> addChild($1); $$ -> addChild($3);
     }
 	| direct_declarator '(' ')' {
@@ -568,19 +570,24 @@ statement
 	;
 
 compound_statement
-	: '{' '}' {
+	: '{' enter_scope '}' {
         $$ = new ASTNode(NodeType::COMPOUND_STMT, "Compound Statement", idx ++);
         list_ptr -> pop_symtab();  // 弹出符号表
         printf("弹出符号表\n");
     }
-	| '{' block_item_list '}' {
+	| '{' enter_scope block_item_list '}' {
         list_ptr -> print_symtab_list();
         list_ptr -> pop_symtab();  // 弹出符号表
         printf("弹出符号表(先打印再弹出)\n");
-        $$ = $2;
+        $$ = $3;
         $$ -> msg = "Compound Statament";
     }
 	;
+
+enter_scope
+    : {
+        list_ptr -> push_symtab();
+    }
 
 block_item_list
 	: block_item {
