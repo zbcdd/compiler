@@ -467,14 +467,11 @@ direct_declarator
 	| '(' declarator ')' {
         $$ = $2;
     }
-	| direct_declarator '[' CONSTANT ']' {
+	| direct_declarator '[' assignment_expression ']' {
         $$ = new ASTNode(NodeType::ARR_DECLARATION, "Arr Declaration", idx ++, $1 -> name);
-        $$ -> addChild($1); $$ -> addChild(new ASTNode(NodeType::CONST, CONST_DEC, idx ++, $3));
+        $$ -> addChild($1); $$ -> addChild($3);
         $$ -> temp_symbol = $1 -> temp_symbol;
         $$ -> temp_symbol -> set_type(TYPE::ARR_TYPE);  // 数组
-        arr_info* cur = new arr_info();
-        cur -> set_length(atoi($3));
-        $$ -> temp_symbol -> set_info(cur);
     }
     | direct_declarator '(' parameter_list ')' {
         $$ = new ASTNode(NodeType::PARAM_DECLARATION, "Function Declaration", idx ++);
