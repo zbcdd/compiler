@@ -157,29 +157,29 @@ multiplicative_expression
     }
 	| multiplicative_expression '*' pow_expression {
         if ($1 -> msg != "Multiplicative Expression") {
-            $$ = new ASTNode(NodeType::EXPR, "Multiplicative Expression", idx ++, "arithmetic_op:*" );
-        $$ -> addChild($1); $$ -> addChild($3);
+            $$ = new ASTNode(NodeType::EXPR, "Multiplicative Expression", idx ++, "arithmetic_op:*");
+            $$ -> addChild($1); $$ -> addChild($3);
         } else {
-            $$ = $1;
-            $$ -> addChild($3);
+            $$ = new ASTNode(NodeType::EXPR, "Multiplicative Expression", idx ++, "arithmetic_op:*");
+            $$ -> addChild($1); $$ -> addChild($3);
         }
     }
 	| multiplicative_expression '/' pow_expression {
         if ($1 -> msg != "Multiplicative Expression") {
-            $$ = new ASTNode(NodeType::EXPR, "Multiplicative Expression", idx ++, "arithmetic_op:/" );
-        $$ -> addChild($1); $$ -> addChild($3);
+            $$ = new ASTNode(NodeType::EXPR, "Multiplicative Expression", idx ++, "arithmetic_op:/");
+            $$ -> addChild($1); $$ -> addChild($3);
         } else {
-            $$ = $1;
-            $$ -> addChild($3);
+            $$ = new ASTNode(NodeType::EXPR, "Multiplicative Expression", idx ++, "arithmetic_op:/");
+            $$ -> addChild($1); $$ -> addChild($3);
         }
     }
 	| multiplicative_expression '%' pow_expression {
         if ($1 -> msg != "Multiplicative Expression") {
-            $$ = new ASTNode(NodeType::EXPR, "Multiplicative Expression", idx ++, "arithmetic_op:%" );
+            $$ = new ASTNode(NodeType::EXPR, "Multiplicative Expression", idx ++, "arithmetic_op:%");
             $$ -> addChild($1); $$ -> addChild($3);
         } else {
-            $$ = $1;
-            $$ -> addChild($3);
+            $$ = new ASTNode(NodeType::EXPR, "Multiplicative Expression", idx ++, "arithmetic_op:%");
+            $$ -> addChild($1); $$ -> addChild($3);
         }
     }
 	;
@@ -193,8 +193,8 @@ additive_expression
             $$ = new ASTNode(NodeType::EXPR, "Additive Expression", idx ++, "arithmetic_op:+");
             $$ -> addChild($1); $$ -> addChild($3);
         } else {
-            $$ = $1;
-            $$ -> addChild($3);
+            $$ = new ASTNode(NodeType::EXPR, "Additive Expression", idx ++, "arithmetic_op:+");
+            $$ -> addChild($1); $$ -> addChild($3);
         }
     }
 	| additive_expression '-' multiplicative_expression {
@@ -202,8 +202,8 @@ additive_expression
             $$ = new ASTNode(NodeType::EXPR, "Additive Expression", idx ++, "arithmetic_op:-");
             $$ -> addChild($1); $$ -> addChild($3);
        } else {
-            $$ = $1;
-            $$ -> addChild($3);
+            $$ = new ASTNode(NodeType::EXPR, "Additive Expression", idx ++, "arithmetic_op:-");
+            $$ -> addChild($1); $$ -> addChild($3);
         }
     }
 	;
