@@ -19,5 +19,15 @@ int main()
     } else {
         c = 5;
     }
+    while(a + b) {
+        cout << a;
+    }
+    if (a + b) {
+        cout << a;
+    } else if (a == 3) {
+        cout << b;
+    } else {
+        cout << c;
+    }
     return 0;
 }

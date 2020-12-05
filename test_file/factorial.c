@@ -22,7 +22,7 @@ int main()
 
 int factorial(int n, int m) {
 	int temp;
-	if (n == 1)
+	if (n == 1 && n == 2 || n == 3)
 		return n;
 	else {
 		temp = (n * factorial(n - 1));
