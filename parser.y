@@ -336,12 +336,12 @@ expression
             $$ -> addChild($3);
         }
     }
-    | input_expression {
+    /* | input_expression {
         $$ = $1;
     }
     | output_expression {
         $$ = $1;
-    }
+    } */
 	;
 
 declaration
@@ -572,14 +572,19 @@ compound_statement
 	: '{' enter_scope '}' {
         $$ = new ASTNode(NodeType::COMPOUND_STMT, "Compound Statement", idx ++);
         list_ptr -> pop_symtab();  // 弹出符号表
-        printf("弹出符号表\n");
+        // printf("弹出符号表\n");
     }
 	| '{' enter_scope block_item_list '}' {
-        list_ptr -> print_symtab_list();
+        // list_ptr -> print_symtab_list();
         list_ptr -> pop_symtab();  // 弹出符号表
-        printf("弹出符号表(先打印再弹出)\n");
-        $$ = $3;
-        $$ -> msg = "Compound Statament";
+        // printf("弹出符号表(先打印再弹出)\n");
+        if ($3 -> msg == "Block Item List") {
+            $$ = $3;
+            $$ -> msg = "Compound Statement";
+        } else {
+            $$ = new ASTNode(NodeType::COMPOUND_STMT, "Compound Statement", idx ++);
+            $$ -> addChild($3);
+        }
     }
 	;
 
@@ -616,7 +621,13 @@ expression_statement
 	: ';' {
         $$ = new ASTNode(NodeType::EXPR, "Empty Statement");
     }
-	| expression ';'{
+	| expression ';' {
+        $$ = $1;
+    }
+    | input_expression ';' {
+        $$ = $1;
+    }
+    | output_expression ';' {
         $$ = $1;
     }
 	;
@@ -625,15 +636,15 @@ selection_statement
 	: IF '(' expression ')' statement {
         $$ = new ASTNode(NodeType::SELECT_STMT, "Selection Statement", idx ++);
         $$ -> addChild($3); $$ -> addChild($5);
-        $3 -> msg = "Condition";
-        $5 -> msg = "Statement if Condition is True";
+        // $3 -> msg = "Condition";
+        // $5 -> msg = "Statement if Condition is True";
     }
 	| IF '(' expression ')' statement ELSE statement {
         $$ = new ASTNode(NodeType::SELECT_STMT, "Selection Statement", idx ++);
         $$ -> addChild($3); $$ -> addChild($5); $$ -> addChild($7);
-        $3 -> msg = "Condition";
-        $5 -> msg = "Statement if Condition is True";
-        $7 -> msg = "Statement if Condition is False";
+        // $3 -> msg = "Condition";
+        // $5 -> msg = "Statement if Condition is True";
+        // $7 -> msg = "Statement if Condition is False";
     }
 	;
 
@@ -647,21 +658,27 @@ iteration_statement
         $$ -> addChild($2); $$ -> addChild($5);
     }
 	| FOR '(' expression_statement expression_statement ')' statement {
+        if ($3 -> msg == "Input Expression") yyerror("unexpected input statement");
+        if ($3 -> msg == "Output Expression") yyerror("unexpected output statement");
         $$ = new ASTNode(NodeType::REPEAT_STMT, "Repeat Statement", idx ++, "for");
-        $$ -> addChild($3); $$ -> addChild($4); $$ -> addChild($6);
+        $$ -> addChild($3); $$ -> addChild($4);
+        $$ -> addChild(new ASTNode(NodeType::EXPR, "Empty Statement"));
+        $$ -> addChild($6);
     }
 	| FOR '(' expression_statement expression_statement expression ')' statement {
         $$ = new ASTNode(NodeType::REPEAT_STMT, "Repeat Statement", idx ++, "for");
         $$ -> addChild($3); $$ -> addChild($4); $$ -> addChild($5); $$ -> addChild($7);
     }
-	| FOR '(' declaration expression_statement ')' statement {
+	/* | FOR '(' declaration expression_statement ')' statement {
         $$ = new ASTNode(NodeType::REPEAT_STMT, "Repeat Statement", idx ++, "for");
-        $$ -> addChild($3); $$ -> addChild($4); $$ -> addChild($6);
-    }
-	| FOR '(' declaration expression_statement expression ')' statement {
+        $$ -> addChild($3); $$ -> addChild($4); 
+        $$ -> addChild(new ASTNode(NodeType::EXPR, "Empty Statement"));
+        $$ -> addChild($6);
+    } */
+	/* | FOR '(' declaration expression_statement expression ')' statement {
         $$ = new ASTNode(NodeType::REPEAT_STMT, "Repeat Statement", idx ++, "for");
         $$ -> addChild($3); $$ -> addChild($4); $$ -> addChild($5); $$ -> addChild($7);
-    }
+    } */
 	;
 
 jump_statement

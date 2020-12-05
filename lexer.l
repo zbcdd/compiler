@@ -71,7 +71,7 @@ void count(char const*, char const*);
 "&"             { count("POINTER_OP", "---"); return('&'); }
 
 [ \t\v\n\f]
-.			    { printf("syntax error!: %s", yytext); }
+.			    { yyerror(yytext); }
 
 %%
 

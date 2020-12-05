@@ -29,5 +29,39 @@ int main()
     } else {
         cout << c;
     }
+
+    if (a == b) {
+        a = a + 1;
+        cin >> a >> b;
+        cout << a;
+        cout << b << c;
+        a = a + b;
+    }
+
+    if (1) a = a + 1;
+
+    if (a == b) cout << b;
+    else if (a == c) cout << b;
+    else cout << c << d << e;
+    int i;
+    for (i = 0; i < 10; i = i + 1) {
+        cout << a;
+    }
+
+    for (; ; ) {
+        cout << a;
+    }
+    for (; i < 10; i = i + 1) {
+        cout << a;
+    }
+    for (; ; i = i + 1) {
+        cout << a;
+    }
+    
+    for (i = 0; i < 10; i = i + 1);
+
+    for (i = 0; i < 10;)
+        a = a + 1;
+
     return 0;
 }
