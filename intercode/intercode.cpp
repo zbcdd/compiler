@@ -247,6 +247,15 @@ std::string InterCode::printCode()
             code += ":\n";
             break;
         }
+        case ARRAY_DECLARATION:
+        {
+            code += "DEC ";
+            code += toString(this -> result);
+            code += " ";
+            code += toString(this -> arg1);
+            code += "\n";
+            break;
+        }
         case NULL_ARG:
         {
             /* code */
@@ -284,6 +293,7 @@ VarPair Varlistnode::findVar(std::string name)
         std::vector<VarPair>* list = &(temp -> varlist);
         for (auto iter = list -> begin(); iter != list -> end(); iter ++)
         {
+            // printf("%s\n", (iter -> name).c_str());
             if (name == iter -> name)
                 return VarPair(iter -> type, iter -> index, iter -> name);
         }
@@ -349,6 +359,8 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             right_value = vlist -> findVar(right -> name);
             if (right_value.type == NULL_ARG)
             {
+                printf("%s\n", right -> name.c_str());
+                printf("error: variable undefined\n");
                 // error: variable undefined
             }
             else
@@ -376,6 +388,8 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             left_value = vlist -> findVar(left -> name);
             if (left_value.type == NULL_ARG)
             {
+                printf("%s\n", left -> name.c_str());
+                printf("error: variable undefined\n");
                 // error: variable undefined
             }
             else
@@ -399,6 +413,8 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             right_value = vlist -> findVar(right -> name);
             if (right_value.type == NULL_ARG)
             {
+                printf("%s\n", right -> name.c_str());
+                printf("error: variable undefined\n");
                 // error: variable undefined
             }
             else
@@ -429,6 +445,9 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             left_value = vlist -> findVar(left -> name);
             if (left_value.type == NULL_ARG)
             {
+                printf("%s\n", left -> name.c_str());
+                printf("error: variable undefined\n");
+                
                 // error: variable undefined
             }
             else
@@ -452,6 +471,8 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             right_value = vlist -> findVar(right -> name);
             if (right_value.type == NULL_ARG)
             {
+                printf("%s\n", right -> name.c_str());
+                printf("error: variable undefined\n");
                 // error: variable undefined
             }
             else
@@ -485,6 +506,8 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             left_value = vlist -> findVar(left -> name);
             if (left_value.type == NULL_ARG)
             {
+                printf("%s\n", left -> name.c_str());
+                printf("error: variable undefined\n");
                 // error: variable undefined
             }
             else
@@ -508,6 +531,8 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             right_value = vlist -> findVar(right -> name);
             if (right_value.type == NULL_ARG)
             {
+                printf("%s\n", right -> name.c_str());
+                printf("error: variable undefined\n");
                 // error: variable undefined
             }
             else
@@ -536,6 +561,8 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             left_value = vlist -> findVar(left -> name);
             if (left_value.type == NULL_ARG)
             {
+                printf("%s\n", left -> name.c_str());
+                printf("error: variable undefined\n");
                 // error: variable undefined
             }
             else
@@ -552,6 +579,8 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             right_value = vlist -> findVar(right -> name);
             if (right_value.type == NULL_ARG)
             {
+                printf("%s\n", right -> name.c_str());
+                printf("error: variable undefined\n");
                 // error: variable undefined
             }
             else
@@ -676,7 +705,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                     (this -> list).push_back(InterCode(VarPair(ARGTYPE::ARG_CONSTANT, atoi((info -> name).c_str())), DOP_ASSIGNMENT, size));
                     (this -> list).push_back(InterCode(VarPair(ARGTYPE::ARG_CONSTANT, 4), DOP_ASSIGNMENT, width));
                     (this -> list).push_back(InterCode(width, size, DOP_MULIPLY, space));
-                    (this -> list).push_back(InterCode(space, ARRAY_DEFINITION, arr));
+                    (this -> list).push_back(InterCode(space, ARRAY_DECLARATION, arr));
                 }
                 else if ((*iter) -> msg == "Initializer")
                 {
@@ -688,32 +717,40 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                         {
                             VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi((value -> name).c_str()));
                             VarPair temp = VarPair(TEMP, temp_count++);
-                            VarPair var = VarPair(VAR, var_count++, (*iter) -> name);
+                            VarPair variable = VarPair(VAR, var_count++, var -> name);
                             (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, temp));
-                            vlist -> addVar(var);
-                            (this -> list).push_back(InterCode(temp, DOP_ASSIGNMENT, var));
+                            vlist -> addVar(variable);
+                            (this -> list).push_back(InterCode(temp, DOP_ASSIGNMENT, variable));
                         }
                         else if (value -> msg == "ID Declaration")
                         {
                             VarPair id = vlist -> findVar(value -> name);
                             if (id.type == NULL_ARG)
                             {
+                                printf("%s\n", (value -> name).c_str());
+                                printf("error: var not defined.\n");
                                 // error: variable undefined
                             }
                             else
                             {
-                                VarPair var = VarPair(VAR, var_count++, (*iter) -> name);
-                                vlist -> addVar(var);
-                                (this -> list).push_back(InterCode(id, DOP_ASSIGNMENT, var));
+                                VarPair variable = VarPair(VAR, var_count++, (*iter) -> name);
+                                vlist -> addVar(variable);
+                                (this -> list).push_back(InterCode(id, DOP_ASSIGNMENT, variable));
                             }
                         }
                         else
                         {
+                            VarPair temp_result = VarPair(TEMP, temp_count++);
+                            this -> arithmetic(value, vlist, temp_result);
+                            VarPair variable = VarPair(VAR, var_count++, var -> name);
+                            vlist -> addVar(variable);
+                            (this -> list).push_back(InterCode(temp_result, DOP_ASSIGNMENT, variable));
                             // error: fatal assignment
                         }
                     }
                     else if(var -> msg == "Arr Declaration")
                     {
+
                         // to be completed
                     }
                 }
@@ -733,6 +770,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             VarPair var = vlist -> findVar(left -> name);
             if (var.type == NULL_ARG)
             {
+                printf("%s\n", left -> name.c_str());
+                printf("error: variable undefined\n");
                 // error: variable undefined
             }
             else

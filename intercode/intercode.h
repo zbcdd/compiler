@@ -46,12 +46,12 @@ enum OPTYPE
     JUMP_EQUALS,        // IF == GOTO
     JUMP_LOE,           // IF <= GOTO
     JUMP_SOE,           // IF >= GOTO
-    FUNC_DEF,    // FUNCTION name
-    FUNCTION_CALL,          // CALL name
+    FUNC_DEF,           // FUNCTION name
+    FUNCTION_CALL,      // CALL name
     PARAM,              // PARAM
     ARG,                // ARG
-    ARRAY_DEFINITION,   // DEC 
-    OP_RETURN,             // RETURN
+    ARRAY_DECLARATION,  // DEC 
+    OP_RETURN,          // RETURN
     STRUCT_DEFINITION,  // struct
 };
 

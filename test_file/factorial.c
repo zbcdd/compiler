@@ -1,12 +1,5 @@
-int factorial(int n, int m) {
-	int temp;
-	if (n == 1)
-		return n;
-	else {
-		temp = (n * factorial(n - 1));
-		return temp;
-	}
-}
+int factorial(int n, int m);
+
 
 int main()
 {
@@ -26,3 +19,13 @@ int main()
 	return 0;
 }
 
+
+int factorial(int n, int m) {
+	int temp;
+	if (n == 1)
+		return n;
+	else {
+		temp = (n * factorial(n - 1));
+		return temp;
+	}
+}
