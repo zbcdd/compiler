@@ -1,4 +1,5 @@
 #include "intercode.h"
+#define INT_SIZE 4
 
 
 std::string itos(int n)
@@ -412,6 +413,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         }
         else if (left -> msg == "Const Declaration")
         {
+            printf("error: a constant value can't be a left value\n");
             // error: a constant value can't be a left value
         }
         else
@@ -747,12 +749,12 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             this -> arithmetic(right, vlist, right_value);
         }
         op = DOP_GETVALUE;
-        int temp_index = this -> checkConst(4);
+        int temp_index = this -> checkConst(INT_SIZE);
         VarPair width;
         if(temp_index == -1)
         {
-            VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
-            this -> addConst(4, temp_count);
+            VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, INT_SIZE);
+            this -> addConst(INT_SIZE, temp_count);
             width = VarPair(TEMP, temp_count++);
             (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, width));
         }
@@ -861,11 +863,11 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                     vlist -> addVar(arr);
                     ASTNode* info = (*((*iter) -> getChildren()))[1];
                     VarPair size_temp;
-                    int temp_index = this -> checkConst(4);
+                    int temp_index = this -> checkConst(INT_SIZE);
                     if (temp_index == -1)
                     {
-                        VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
-                        this -> addConst(4, temp_count);
+                        VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, INT_SIZE);
+                        this -> addConst(INT_SIZE, temp_count);
                         size_temp = VarPair(TEMP, temp_count++);
                         (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, size_temp));
                     }
@@ -1097,12 +1099,12 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                 right_value = VarPair(TEMP, temp_count++);
                 this -> arithmetic(right, vlist, right_value);
             }
-            int temp_index = this -> checkConst(4);
+            int temp_index = this -> checkConst(INT_SIZE);
             VarPair width;
             if(temp_index == -1)
             {
-                VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
-                this -> addConst(4, temp_count);
+                VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, INT_SIZE);
+                this -> addConst(INT_SIZE, temp_count);
                 width = VarPair(TEMP, temp_count++);
                 (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, width));
             }
@@ -1208,11 +1210,19 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                     idxtemp = VarPair(TEMP, temp_count++);
                     this -> arithmetic(targetidx, vlist, idxtemp);
                 }
-                VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
-                VarPair width = VarPair(TEMP, temp_count++);
+                int temp_index = this -> checkConst(INT_SIZE);
+                VarPair width;
+                if(temp_index == -1)
+                {
+                    VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, INT_SIZE);
+                    this -> addConst(INT_SIZE, temp_count);
+                    width = VarPair(TEMP, temp_count++);
+                    (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, width));
+                }
+                else
+                    width = VarPair(TEMP, temp_index);
                 VarPair raddress = VarPair(TEMP, temp_count++);
                 VarPair left_value = VarPair(TEMP, temp_count++);
-                (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, width));
                 (this -> list).push_back(InterCode(idxtemp, width, DOP_MULIPLY, raddress));
                 (this -> list).push_back(InterCode(arrpair, raddress, DOP_GETVALUE, left_value));
                 left_value.usage = CONTENT;

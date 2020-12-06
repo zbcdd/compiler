@@ -1,30 +1,29 @@
 
 int main()
 {
-// int a = 1;
-// int b = 40;
-// int c = 5, d = 3;
-// int e [5];
-// int f = a + b - c;
-// int g = a * b / c;
-    // int a[5];
-    // int b;
-    // b = 1;
-    // a[0] = 2;
-    // a[1] = a[0];
-    // a[b + 1] = 3 * 3;
-int b[4];
-// int a = -1;
-// cin >> b[0];
-int a = 4;
-int c = 4;
-int d[4];
-d[0] = 4;
-cout << b[0];
-
-// for (int i = 0; i < 5; i++)
-// {
-//     ;
-// }
+    // int i = 0;
+    // while(i < 100)
+    // {
+    //     i = i + 1;
+    // }
+    // int j = 0;
+    // int a;
+    // if(j < 0 || j > 0 && i == 2)
+    // {
+    //     a = 1;
+    // }
+    // else if (j > 0)
+    // {
+    //     a = 2;
+    // }
+    // else
+    // {
+    //     a = 3;
+    // }
+    int k = 0;
+    if (!(k == 0))
+    {
+        cout << k;
+    }
     return 0;
 }
