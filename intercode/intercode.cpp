@@ -1129,9 +1129,9 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
     }
     else if (root -> msg == "Input Expression")
     {
-        std::vector<ASTNode*>* childrens = root -> getChildren();
+        std::vector<ASTNode*>* children = root -> getChildren();
         // printf("1\n");
-        for (auto iter = childrens -> begin(); iter != childrens -> end(); iter++)
+        for (auto iter = children -> begin(); iter != children -> end(); iter++)
         {
             if ((*iter) -> msg == "ID Declaration")
             {
@@ -1237,8 +1237,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
     }
     else if (root -> msg == "Output Expression")
     {
-        std::vector<ASTNode*>* childrens = root -> getChildren();
-        for (auto iter = childrens -> begin(); iter != childrens -> end(); iter++)
+        std::vector<ASTNode*>* children = root -> getChildren();
+        for (auto iter = children -> begin(); iter != children -> end(); iter++)
         {
             if ((*iter) -> msg == "ID Declaration")
             {
@@ -1251,7 +1251,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                 }
                 else
                 {
-                    (this -> list).push_back(InterCode(OP_PRINT, var));
+                    (this -> list).push_back(InterCode(ARG, var));
+                    (this -> list).push_back(InterCode(OP_PRINT));
                 }
             }
             else if ((*iter) -> msg == "Const Declaration")
@@ -1268,7 +1269,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                 }
                 else
                     const_output = VarPair(TEMP, temp_index);
-                (this -> list).push_back(InterCode(OP_PRINT, const_output));
+                (this -> list).push_back(InterCode(ARG, const_output));
+                (this -> list).push_back(InterCode(OP_PRINT));
             }
             else
             {
@@ -1281,9 +1283,53 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             }
         }
     }
-    else if (root -> msg == "Selection Statement") {}
+    // else if (root -> msg == "Jump Statement")
+    // {
+    //     ASTNode* expression = (*(root -> getChildren()))[0];
+    //     if (expression -> msg == "ID Declaration")
+    //     {
+    //         VarPair var = vlist -> findVar(expression -> name);
+    //         if (var.type == NULL_ARG)
+    //         {
+    //             printf("%s\n", expression -> name.c_str());
+    //             printf("error: variable undefined\n");
+    //             // error: variable undefined
+    //         }
+    //         else
+    //         {
+    //             (this -> list).push_back(InterCode(ARG, var));
+    //             (this -> list).push_back(InterCode(OP_PRINT));
+    //         }
+    //     }
+    //     else if (expression -> msg == "Const Declaration")
+    //     {
+    //         int const_value = atoi(expression -> name.c_str());
+    //         int temp_index = this -> checkConst(const_value);
+    //         VarPair const_output;
+    //         if(temp_index == -1)
+    //         {
+    //             this -> addConst(const_value, temp_count);
+    //             const_output = VarPair(TEMP, temp_count++);
+    //             VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+    //             (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, const_output));
+    //         }
+    //         else
+    //             const_output = VarPair(TEMP, temp_index);
+    //         (this -> list).push_back(InterCode(ARG, const_output));
+    //         (this -> list).push_back(InterCode(OP_PRINT));
+    //     }
+    //     else
+    //     {
+    //         VarPair outputer = VarPair(TEMP, temp_count++);
+    //         this -> arithmetic(expression, vlist, outputer); 
+    //         if(expression -> msg == "Expr")
+    //             outputer.usage = CONTENT;
+    //         (this -> list).push_back(InterCode(ARG, outputer));
+    //         (this -> list).push_back(InterCode(OP_PRINT));
+    //     }
+    // }
     else if (root -> msg == "Repeat Statement") {}
-    else if (root -> msg == "Jump Statement") {}
+    else if (root -> msg == "Selection Statement") {}
     else if (root -> msg == "") {}
     // to be completed
 };
@@ -1292,7 +1338,7 @@ void InterCodeList::printCodeList()
 {
     printf("print intercode list:\n");
     for (auto iter = (this -> list).begin(); iter != (this -> list).end(); iter ++)
-    {
+    {    
         printf("%s", (*iter).printCode().c_str());
     }
     // to be completed
