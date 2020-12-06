@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <stdlib.h>
+#include <unordered_map>
 #include <iostream>
 #include <sstream>
 #include "../ast/AST.h"
@@ -34,8 +35,8 @@ enum OPTYPE
     DOP_POW,            // ^
     DOP_ASSIGNMENT,     // =
     DOP_GETVALUE,       // []
-    OP_READ,            // cin
-    OP_PRINT,           // cout
+    OP_READ,            // CALL cin
+    OP_PRINT,           // CALL cout
     RELOP_L,            // >
     RELOP_S,            // <
     RELOP_EQUALS,       // ==
@@ -81,6 +82,7 @@ private:
     static std::string toString(VarPair arg);
 public:
     InterCode();
+    InterCode(OPTYPE op);
     InterCode(OPTYPE op, VarPair result);
     InterCode(VarPair arg, OPTYPE op, VarPair result);
     InterCode(VarPair arg1, VarPair arg2, OPTYPE op, VarPair result);
@@ -113,12 +115,16 @@ private:
     static int var_count;                   // counter for VAR
     static int arr_count;                   // counter for ARR
     std::vector<InterCode> list;
+    Varlistnode* root_list;
+    std::unordered_map<int, int> constant_pool;
     void classify();
     void arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_result);
+    void addConst(int value, int index);
+    int checkConst(int value);
 public:
     InterCodeList();
-    InterCodeList(InterCodeList* alist);
     int getListSize();
+    void read(ASTNode* root);
     void read(ASTNode* root, Varlistnode* vlist);
     void printCodeList();
 };

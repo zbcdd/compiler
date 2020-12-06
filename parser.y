@@ -16,7 +16,6 @@ void yyerror(const char *str);
 int idx = 0;
 symtab_list* list_ptr;
 ASTNode* ASTroot;
-Varlistnode vlist = Varlistnode();
 InterCodeList ic_list = InterCodeList();
 %}
 %union {
@@ -775,7 +774,7 @@ int main(int argc, char* argv[])
        if (ret) printf("PARSER ERROR!!!");
     } while (!feof(yyin));
     ASTroot -> printTree(ASTroot, 0, false, "");
-    ic_list.read(ASTroot, &vlist);
+    ic_list.read(ASTroot);
     ic_list.printCodeList();
     // list_ptr -> print_symtab_list(); 未完成
     return 0;

@@ -118,11 +118,20 @@ InterCode::InterCode()
     this -> arg2 = VarPair();
 };
 
+InterCode::InterCode(OPTYPE op)
+{
+    this -> label = -1;
+    this -> result = VarPair();
+    this -> op = op;
+    this -> arg1 = VarPair();
+    this -> arg2 = VarPair();
+};
+
 InterCode::InterCode(OPTYPE op, VarPair result)
 {
     this -> label = -1;
     this -> result = result;
-    this -> op = NULL_TYPE;
+    this -> op = op;
     this -> arg1 = VarPair();
     this -> arg2 = VarPair();
 };
@@ -173,10 +182,8 @@ void InterCode::setArgSecond(VarPair arg2)
 std::string InterCode::printCode()
 {
     std::string code = "";
-    // to be completed
     switch (this -> op)
     {
-        
         case DOP_ASSIGNMENT:
         {
             if (this -> arg2.type == NULL_ARG)
@@ -265,6 +272,31 @@ std::string InterCode::printCode()
             code += "\n";
             break;
         }
+        case OP_READ:
+        {
+            code += toString(this -> result);
+            code += " := CALL cin\n";
+            break;
+        }
+        case OP_PRINT:
+        {
+            code += "CALL cout\n";
+            break;
+        }
+        case PARAM:
+        {
+            code += "RARAM ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case ARG:
+        {
+            code += "ARG ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
         case NULL_ARG:
         {
             /* code */
@@ -333,6 +365,22 @@ void InterCodeList::classify()
     // to be completed
 };
 
+void InterCodeList::addConst(int value, int index)
+{
+    if(this -> constant_pool.count(value) != 0)
+        printf("error: const value already existed.\n");
+    else
+        this->constant_pool[value] = index;
+};
+
+int InterCodeList::checkConst(int value)
+{
+    if(this -> constant_pool.count(value) != 0)
+        return this -> constant_pool[value];
+    else
+        return -1;
+};
+
 void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_result)
 {
     ASTNode* left = (*(root->getChildren()))[0];
@@ -387,9 +435,17 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         }
         else if (right -> msg == "Const Declaration")
         {
-            right_value = VarPair(TEMP, temp_count++);
-            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(right -> name.c_str()));
-            (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            int const_value = atoi(right -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                right_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            }
+            else
+                right_value = VarPair(TEMP, temp_index);
         }
         else
         {
@@ -422,9 +478,17 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         }
         else if (left -> msg == "Const Declaration")
         {
-            left_value = VarPair(TEMP, temp_count++);
-            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(left -> name.c_str()));
-            (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, left_value));
+            int const_value = atoi(left -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                left_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, left_value));
+            }
+            else
+                left_value = VarPair(TEMP, temp_index);
         }
         else
         {
@@ -447,9 +511,17 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         }
         else if (right -> msg == "Const Declaration")
         {
-            right_value = VarPair(TEMP, temp_count++);
-            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(right -> name.c_str()));
-            (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            int const_value = atoi(right -> name.c_str());
+            int temp_index = this->checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                right_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            }
+            else
+                right_value = VarPair(TEMP, temp_index);
         }
         else
         {
@@ -485,9 +557,17 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         }
         else if (left -> msg == "Const Declaration")
         {
-            left_value = VarPair(TEMP, temp_count++);
-            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(left -> name.c_str()));
-            (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, left_value));
+            int const_value = atoi(left -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                left_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, left_value));
+            }
+            else
+                left_value = VarPair(TEMP, temp_index);
         }
         else
         {
@@ -510,9 +590,17 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         }
         else if (right -> msg == "Const Declaration")
         {
-            right_value = VarPair(TEMP, temp_count++);
-            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(right -> name.c_str()));
-            (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            int const_value = atoi(right -> name.c_str());
+            int temp_index = this->checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                right_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            }
+            else
+                right_value = VarPair(TEMP, temp_index);
         }
         else
         {
@@ -551,9 +639,17 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         }
         else if (left -> msg == "Const Declaration")
         {
-            left_value = VarPair(TEMP, temp_count++);
-            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(left -> name.c_str()));
-            (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, left_value));
+            int const_value = atoi(left -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                left_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, left_value));
+            }
+            else
+                left_value = VarPair(TEMP, temp_index);
         }
         else
         {
@@ -576,9 +672,17 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         }
         else if (right -> msg == "Const Declaration")
         {
-            right_value = VarPair(TEMP, temp_count++);
-            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(right -> name.c_str()));
-            (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            int const_value = atoi(right -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                right_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            }
+            else
+                right_value = VarPair(TEMP, temp_index);
         }
         else
         {
@@ -625,9 +729,17 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         }
         else if (right -> msg == "Const Declaration")
         {
-            right_value = VarPair(TEMP, temp_count++);
-            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(right -> name.c_str()));
-            (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            int const_value = atoi(right -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                right_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            }
+            else
+                right_value = VarPair(TEMP, temp_index);
         }
         else
         {
@@ -635,10 +747,18 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             this -> arithmetic(right, vlist, right_value);
         }
         op = DOP_GETVALUE;
-        VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
-        VarPair width = VarPair(TEMP, temp_count++);
+        int temp_index = this -> checkConst(4);
+        VarPair width;
+        if(temp_index == -1)
+        {
+            VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
+            this -> addConst(4, temp_count);
+            width = VarPair(TEMP, temp_count++);
+            (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, width));
+        }
+        else
+            width = VarPair(TEMP, temp_index);
         VarPair raddress = VarPair(TEMP, temp_count++);
-        (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, width));
         (this -> list).push_back(InterCode(right_value, width, DOP_MULIPLY, raddress));
         (this -> list).push_back(InterCode(left_value, raddress, op, temp_result));
     }
@@ -660,16 +780,17 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
 
 InterCodeList::InterCodeList()
 {
-    // do nothing
-};
-InterCodeList::InterCodeList(InterCodeList* alist)
-{
-    // to be completed
+    this -> root_list = new Varlistnode();
 };
 
 int InterCodeList::getListSize()
 {
     return this -> list.size();
+};
+
+void InterCodeList::read(ASTNode* root)
+{
+    this -> read(root, this -> root_list);
 };
 
 void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
@@ -739,12 +860,31 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                     VarPair arr = VarPair(ARR, arr_count++, (*iter) -> name);
                     vlist -> addVar(arr);
                     ASTNode* info = (*((*iter) -> getChildren()))[1];
-                    VarPair size = VarPair(TEMP, temp_count++);
-                    VarPair width = VarPair(TEMP, temp_count++);
+                    VarPair size_temp;
+                    int temp_index = this -> checkConst(4);
+                    if (temp_index == -1)
+                    {
+                        VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
+                        this -> addConst(4, temp_count);
+                        size_temp = VarPair(TEMP, temp_count++);
+                        (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, size_temp));
+                    }
+                    else
+                        size_temp = VarPair(TEMP, temp_index);
+                    int const_value = atoi((info -> name).c_str());
+                    VarPair width_temp;
+                    temp_index = this -> checkConst(const_value);
+                    if (temp_index == -1)
+                    {
+                        VarPair width = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                        this -> addConst(const_value, temp_count);
+                        width_temp = VarPair(TEMP, temp_count++);
+                        (this -> list).push_back(InterCode(width, DOP_ASSIGNMENT, width_temp));
+                    }
+                    else
+                        width_temp = VarPair(TEMP, temp_index);
                     VarPair space = VarPair(TEMP, temp_count++);
-                    (this -> list).push_back(InterCode(VarPair(ARGTYPE::ARG_CONSTANT, atoi((info -> name).c_str())), DOP_ASSIGNMENT, size));
-                    (this -> list).push_back(InterCode(VarPair(ARGTYPE::ARG_CONSTANT, 4), DOP_ASSIGNMENT, width));
-                    (this -> list).push_back(InterCode(width, size, DOP_MULIPLY, space));
+                    (this -> list).push_back(InterCode(width_temp, size_temp, DOP_MULIPLY, space));
                     (this -> list).push_back(InterCode(space, ARRAY_DECLARATION, arr));
                 }
                 else if ((*iter) -> msg == "Initializer")
@@ -755,10 +895,19 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                     {
                         if (value -> msg == "Const Declaration")
                         {
-                            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi((value -> name).c_str()));
-                            VarPair temp = VarPair(TEMP, temp_count++);
+                            int const_value = atoi(value -> name.c_str());
+                            int temp_index = this -> checkConst(const_value);
+                            VarPair temp;
+                            if(temp_index == -1)
+                            {
+                                this -> addConst(const_value, temp_count);
+                                temp = VarPair(TEMP, temp_count++);
+                                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, temp));
+                            }
+                            else
+                                temp = VarPair(TEMP, temp_index);
                             VarPair variable = VarPair(VAR, var_count++, var -> name);
-                            (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, temp));
                             vlist -> addVar(variable);
                             (this -> list).push_back(InterCode(temp, DOP_ASSIGNMENT, variable));
                         }
@@ -833,9 +982,18 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             }
             else if (right -> msg == "Const Declaration")
             {
-                VarPair right_const = VarPair(TEMP, temp_count++);
-                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(right -> name.c_str()));
-                (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_const));
+                int const_value = atoi(right -> name.c_str());
+                int temp_index = this -> checkConst(const_value);
+                VarPair right_const;
+                if(temp_index == -1)
+                {
+                    this -> addConst(const_value, temp_count);
+                    right_const = VarPair(TEMP, temp_count++);
+                    VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                    (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_const));
+                }
+                else
+                    right_const = VarPair(TEMP, temp_index);
                 (this -> list).push_back(InterCode(right_const, DOP_ASSIGNMENT, var));
             }
             else
@@ -848,8 +1006,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
         else if (left -> msg == "Expr")
         {
             // VarPair left_value = ;
-            ASTNode* arrname = (*(left->getChildren()))[0];
-            ASTNode* targetidx = (*(left->getChildren()))[1];
+            ASTNode* arrname = (*(left -> getChildren()))[0];
+            ASTNode* targetidx = (*(left -> getChildren()))[1];
             VarPair arrpair;
             VarPair idxtemp;
             if (arrname -> msg == "ID Declaration")
@@ -860,6 +1018,11 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
                     printf("%s\n", arrname -> name.c_str());
                     printf("error: variable undefined\n");
                     // error: variable undefined
+                }
+                else if (arrpair.type != ARR)
+                {
+                    printf("%s\n", arrname -> name.c_str());
+                    printf("error: is not an array\n");
                 }
                 else
                 {
@@ -873,7 +1036,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             }
             if (targetidx -> msg == "ID Declaration")
             {
-                idxtemp = vlist -> findVar(right -> name);
+                idxtemp = vlist -> findVar(targetidx -> name);
                 if (idxtemp.type == NULL_ARG)
                 {
                     printf("%s\n", targetidx -> name.c_str());
@@ -887,9 +1050,17 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             }
             else if (targetidx -> msg == "Const Declaration")
             {
-                idxtemp = VarPair(TEMP, temp_count++);
-                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(targetidx -> name.c_str()));
-                (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, idxtemp));
+                int const_value = atoi(targetidx -> name.c_str());
+                int temp_index = this -> checkConst(const_value);
+                if(temp_index == -1)
+                {
+                    this -> addConst(const_value, temp_count);
+                    idxtemp = VarPair(TEMP, temp_count++);
+                    VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                    (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, idxtemp));
+                }
+                else
+                    idxtemp = VarPair(TEMP, temp_index);
             }
             else
             {
@@ -909,20 +1080,36 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             }
             else if (right -> msg == "Const Declaration")
             {
-                right_value = VarPair(TEMP, temp_count++);
-                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, atoi(right -> name.c_str()));
-                (this->list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+                int const_value = atoi(right -> name.c_str());
+                int temp_index = this -> checkConst(const_value);
+                if(temp_index == -1)
+                {
+                    this -> addConst(const_value, temp_count);
+                    right_value = VarPair(TEMP, temp_count++);
+                    VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                    (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+                }
+                 else
+                    right_value = VarPair(TEMP, temp_index);
             }
             else
             {
                 right_value = VarPair(TEMP, temp_count++);
                 this -> arithmetic(right, vlist, right_value);
-            }    
-            VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
-            VarPair width = VarPair(TEMP, temp_count++);
+            }
+            int temp_index = this -> checkConst(4);
+            VarPair width;
+            if(temp_index == -1)
+            {
+                VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
+                this -> addConst(4, temp_count);
+                width = VarPair(TEMP, temp_count++);
+                (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, width));
+            }
+            else
+                width = VarPair(TEMP, temp_index);
             VarPair raddress = VarPair(TEMP, temp_count++);
             VarPair left_value = VarPair(TEMP, temp_count++);
-            (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, width));
             (this -> list).push_back(InterCode(idxtemp, width, DOP_MULIPLY, raddress));
             (this -> list).push_back(InterCode(arrpair, raddress, DOP_GETVALUE, left_value));
             left_value.usage = CONTENT;
@@ -938,10 +1125,154 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
         }
         
     }
+    else if (root -> msg == "Input Expression")
+    {
+        std::vector<ASTNode*>* childrens = root -> getChildren();
+        // printf("1\n");
+        for (auto iter = childrens -> begin(); iter != childrens -> end(); iter++)
+        {
+            if ((*iter) -> msg == "ID Declaration")
+            {
+                VarPair var = vlist -> findVar((*iter) -> name);
+                if (var.type == NULL_ARG)
+                {
+                    printf("%s\n", (*iter) -> name.c_str());
+                    printf("error: variable undefined\n");
+                    // error: variable undefined
+                }
+                else
+                {
+                    (this -> list).push_back(InterCode(OP_READ, var));
+                }
+            }
+            else if ((*iter) -> msg == "Expr")
+            {
+                ASTNode* arrname = (*((*iter) -> getChildren()))[0];
+                ASTNode* targetidx = (*((*iter) -> getChildren()))[1];
+                VarPair arrpair;
+                VarPair idxtemp;
+                if (arrname -> msg == "ID Declaration")
+                {
+                    arrpair = vlist -> findVar(arrname -> name);
+                    if (arrpair.type == NULL_ARG)
+                    {
+                        printf("%s\n", arrname -> name.c_str());
+                        printf("error: variable undefined\n");
+                        // error: variable undefined
+                    }
+                    else if (arrpair.type != ARR)
+                    {
+                        printf("%s\n", arrname -> name.c_str());
+                        printf("error: is not an array\n");
+                    }
+                    else
+                    {
+                    
+                    }
+                }
+                else
+                {
+                    printf("not a correct type with \"[]\"\n");
+                    // error: not a correct type with "[]"
+                }
+                if (targetidx -> msg == "ID Declaration")
+                {
+                    idxtemp = vlist -> findVar(targetidx -> name);
+                    if (idxtemp.type == NULL_ARG)
+                    {
+                        printf("%s\n", targetidx -> name.c_str());
+                        printf("error: variable undefined\n");
+                        // error: variable undefined
+                    }
+                    else
+                    {
+                        
+                    }
+                }
+                else if (targetidx -> msg == "Const Declaration")
+                {
+                    int const_value = atoi(targetidx -> name.c_str());
+                    int temp_index = this -> checkConst(const_value);
+                    if(temp_index == -1)
+                    {
+                        this -> addConst(const_value, temp_count);
+                        idxtemp = VarPair(TEMP, temp_count++);
+                        VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                        (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, idxtemp));
+                    }
+                    else
+                        idxtemp = VarPair(TEMP, temp_index);
+                }
+                else
+                {
+                    idxtemp = VarPair(TEMP, temp_count++);
+                    this -> arithmetic(targetidx, vlist, idxtemp);
+                }
+                VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
+                VarPair width = VarPair(TEMP, temp_count++);
+                VarPair raddress = VarPair(TEMP, temp_count++);
+                VarPair left_value = VarPair(TEMP, temp_count++);
+                (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, width));
+                (this -> list).push_back(InterCode(idxtemp, width, DOP_MULIPLY, raddress));
+                (this -> list).push_back(InterCode(arrpair, raddress, DOP_GETVALUE, left_value));
+                left_value.usage = CONTENT;
+                (this -> list).push_back(InterCode(OP_READ, left_value));
+            }
+            else
+            {
+                printf("error: not an expression that can be inputted.\n");
+                // error: not an expression that can be inputted.
+            }
+        }
+    }
+    else if (root -> msg == "Output Expression")
+    {
+        std::vector<ASTNode*>* childrens = root -> getChildren();
+        for (auto iter = childrens -> begin(); iter != childrens -> end(); iter++)
+        {
+            if ((*iter) -> msg == "ID Declaration")
+            {
+                VarPair var = vlist -> findVar((*iter) -> name);
+                if (var.type == NULL_ARG)
+                {
+                    printf("%s\n", (*iter) -> name.c_str());
+                    printf("error: variable undefined\n");
+                    // error: variable undefined
+                }
+                else
+                {
+                    (this -> list).push_back(InterCode(OP_PRINT, var));
+                }
+            }
+            else if ((*iter) -> msg == "Const Declaration")
+            {
+                int const_value = atoi((*iter) -> name.c_str());
+                int temp_index = this -> checkConst(const_value);
+                VarPair const_output;
+                if(temp_index == -1)
+                {
+                    this -> addConst(const_value, temp_count);
+                    const_output = VarPair(TEMP, temp_count++);
+                    VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                    (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, const_output));
+                }
+                else
+                    const_output = VarPair(TEMP, temp_index);
+                (this -> list).push_back(InterCode(OP_PRINT, const_output));
+            }
+            else
+            {
+                VarPair outputer = VarPair(TEMP, temp_count++);
+                this -> arithmetic(*iter, vlist, outputer); 
+                if((*iter) -> msg == "Expr")
+                    outputer.usage = CONTENT;
+                (this -> list).push_back(InterCode(ARG, outputer));
+                (this -> list).push_back(InterCode(OP_PRINT));
+            }
+        }
+    }
     else if (root -> msg == "Selection Statement") {}
     else if (root -> msg == "Repeat Statement") {}
-    else if (root -> msg == "Input Expression") {}
-    else if (root -> msg == "Output Expression") {}
     else if (root -> msg == "Jump Statement") {}
     else if (root -> msg == "") {}
     // to be completed
@@ -949,7 +1280,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
 
 void InterCodeList::printCodeList()
 {
-    printf("printcodelist\n");
+    printf("print intercode list:\n");
     for (auto iter = (this -> list).begin(); iter != (this -> list).end(); iter ++)
     {
         printf("%s", (*iter).printCode().c_str());
