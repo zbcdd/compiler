@@ -4,8 +4,9 @@ int factorial(int n, int m);
 int main()
 {
 	int result, times;
+	int i;
 	cin >> result >> times;
-	for (int i = 0; i < times; i = i + 1) {
+	for (i = 0; i < times; i = i + 1) {
 		int n;
 		cin >> n;
 		if (n > 1) {

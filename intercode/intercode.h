@@ -81,6 +81,7 @@ private:
     static std::string toString(VarPair arg);
 public:
     InterCode();
+    InterCode(OPTYPE op, VarPair result);
     InterCode(VarPair arg, OPTYPE op, VarPair result);
     InterCode(VarPair arg1, VarPair arg2, OPTYPE op, VarPair result);
     void setLabel(int n);

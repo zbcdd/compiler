@@ -9,7 +9,12 @@ int main()
 // int g = a * b / c;
     int a[5];
     int b;
-    a = b;
+    b = 1;
+    a[0] = 2;
+    a[1] = a[0];
+    a[b + 1] = 3 * 3;
+
+
 // for (int i = 0; i < 5; i++)
 // {
 //     ;
