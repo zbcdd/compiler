@@ -96,6 +96,11 @@ std::string InterCode::toString(VarPair arg)
             p2 = arg.name;
             break;
         }
+        case LABEL:
+        {
+            p2 = "label";
+            break;
+        }
         default:
         {
             p2 = "";
@@ -112,7 +117,6 @@ std::string InterCode::toString(VarPair arg)
 
 InterCode::InterCode()
 {
-    this -> label = -1;
     this -> result = VarPair();
     this -> op = NULL_TYPE;
     this -> arg1 = VarPair();
@@ -121,7 +125,6 @@ InterCode::InterCode()
 
 InterCode::InterCode(OPTYPE op)
 {
-    this -> label = -1;
     this -> result = VarPair();
     this -> op = op;
     this -> arg1 = VarPair();
@@ -130,7 +133,6 @@ InterCode::InterCode(OPTYPE op)
 
 InterCode::InterCode(OPTYPE op, VarPair result)
 {
-    this -> label = -1;
     this -> result = result;
     this -> op = op;
     this -> arg1 = VarPair();
@@ -139,7 +141,6 @@ InterCode::InterCode(OPTYPE op, VarPair result)
 
 InterCode::InterCode(VarPair arg, OPTYPE op, VarPair result)
 {
-    this -> label = -1;
     this -> result = result;
     this -> op = op;
     this -> arg1 = arg;
@@ -148,16 +149,10 @@ InterCode::InterCode(VarPair arg, OPTYPE op, VarPair result)
 
 InterCode::InterCode(VarPair arg1, VarPair arg2, OPTYPE op, VarPair result)
 {
-    this -> label = -1;
     this -> result = result;
     this -> op = op;
     this -> arg1 = arg1;
     this -> arg2 = arg2;
-};
-
-void InterCode::setLabel(int n)
-{
-    this -> label = n;
 };
 
 void InterCode::setResult(VarPair result)
@@ -298,6 +293,20 @@ std::string InterCode::printCode()
             code += "\n";
             break;
         }
+        case OP_LABEL:
+        {
+            code += "LABEL ";
+            code += toString(this -> result);
+            code += " :\n";
+            break;
+        }
+        case GOTO:
+        {
+            code += "GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
         case NULL_ARG:
         {
             /* code */
@@ -364,22 +373,6 @@ int InterCodeList::arr_count = 0;
 void InterCodeList::classify()
 {
     // to be completed
-};
-
-void InterCodeList::addConst(int value, int index)
-{
-    if(this -> constant_pool.count(value) != 0)
-        printf("error: const value already existed.\n");
-    else
-        this->constant_pool[value] = index;
-};
-
-int InterCodeList::checkConst(int value)
-{
-    if(this -> constant_pool.count(value) != 0)
-        return this -> constant_pool[value];
-    else
-        return -1;
 };
 
 void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_result)
@@ -778,6 +771,28 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         right_value.usage = CONTENT;
     if (root -> msg != "Expr")
         (this -> list).push_back(InterCode(left_value, right_value, op, temp_result));
+};
+
+void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair failure)
+{
+    
+    // to be completed
+};
+
+void InterCodeList::addConst(int value, int index)
+{
+    if(this -> constant_pool.count(value) != 0)
+        printf("error: const value already existed.\n");
+    else
+        this->constant_pool[value] = index;
+};
+
+int InterCodeList::checkConst(int value)
+{
+    if(this -> constant_pool.count(value) != 0)
+        return this -> constant_pool[value];
+    else
+        return -1;
 };
 
 InterCodeList::InterCodeList()
@@ -1328,8 +1343,81 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
     //         (this -> list).push_back(InterCode(OP_PRINT));
     //     }
     // }
-    else if (root -> msg == "Repeat Statement") {}
-    else if (root -> msg == "Selection Statement") {}
+    else if (root -> msg == "Repeat Statement")
+    {
+        if (root -> name == "while")
+        {
+            ASTNode* condition = (*(root -> getChildren()))[0];
+            ASTNode* order = (*(root -> getChildren()))[1];
+            VarPair loop_start = VarPair(LABEL, label_count++);
+            VarPair loop_leave = VarPair(LABEL, label_count++);
+            VarPair loop_continue = VarPair(LABEL, label_count++);
+            (this -> list).push_back(InterCode(OP_LABEL, loop_start));
+            this -> makeConditions(condition, loop_continue, loop_leave);
+            (this -> list).push_back(InterCode(OP_LABEL, loop_continue));
+            this -> read(order, vlist);
+            (this -> list).push_back(InterCode(GOTO, loop_start));
+            (this -> list).push_back(InterCode(OP_LABEL, loop_leave));
+        }
+        else if (root -> name == "for")
+        {
+            ASTNode* before_loop = (*(root -> getChildren()))[0];
+            ASTNode* condition = (*(root -> getChildren()))[1];
+            ASTNode* after_each_loop = (*(root -> getChildren()))[2];
+            ASTNode* order = (*(root -> getChildren()))[3];
+            this -> read(before_loop, vlist);
+            VarPair loop_start = VarPair(LABEL, label_count++);
+            VarPair loop_leave = VarPair(LABEL, label_count++);
+            VarPair loop_continue = VarPair(LABEL, label_count++);
+            (this -> list).push_back(InterCode(OP_LABEL, loop_start));
+            this -> makeConditions(condition, loop_continue, loop_leave);
+            (this -> list).push_back(InterCode(OP_LABEL, loop_continue));
+            this -> read(order, vlist);
+            this -> read(after_each_loop, vlist);
+            (this -> list).push_back(InterCode(GOTO, loop_start));
+            (this -> list).push_back(InterCode(OP_LABEL, loop_leave));
+        }
+        else
+        {
+            printf("Repeat Statement: there shouldn't be other possibilities.\n");
+            //error: there shouldn't be other possibilities.
+        }
+    }
+    else if (root -> msg == "Selection Statement")
+    {
+        std::vector<ASTNode*>* children = root -> getChildren();
+        ASTNode* condition = (*children)[0];
+        ASTNode* order = (*children)[1];
+        if (children -> size() == 2)
+        {
+            VarPair success = VarPair(LABEL, label_count++);
+            VarPair failure = VarPair(LABEL, label_count++);
+            this -> makeConditions(condition, success, failure);
+            (this -> list).push_back(InterCode(OP_LABEL, success));
+            this -> read(order, vlist);
+            (this -> list).push_back(InterCode(OP_LABEL, failure));
+        }
+        else if (children -> size() == 3)
+        {
+            ASTNode* order_if_failure = (*children)[2];
+            VarPair success = VarPair(LABEL, label_count++);
+            VarPair failure = VarPair(LABEL, label_count++);
+            this -> makeConditions(condition, success, failure);
+            (this -> list).push_back(InterCode(OP_LABEL, success));
+            this -> read(order, vlist);
+            (this -> list).push_back(InterCode(OP_LABEL, failure));
+            this -> read(order_if_failure, vlist);
+        }
+        else
+        {
+            printf("Selection Statement: there shouldn't be other possibilities.\n");
+            //error: there shouldn't be other possibilities.
+        }
+    }
+    else if (root -> msg == "Empty Statement")
+    {
+        // do nothing
+    }
     else if (root -> msg == "") {}
     // to be completed
 };

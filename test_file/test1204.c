@@ -2,10 +2,13 @@
 int main()
 {
     int i = 0;
-    // while(i < 100)
-    // {
-    //     i = i + 1;
-    // }
+    while(i < 100)
+        i = i + 1;
+    
+    for (i = 0; i < 10; i = i + 1)
+    {
+        i = i + 1;
+    }
     int j = 0;
     int a;
     if(j < 0 || j > 0 && i == 2)
@@ -20,7 +23,7 @@ int main()
     {
         a = 3;
     }
-    cout << j;
+    // cout << j;
     // int k = 0;
     // if (!(k == 0))
     // {

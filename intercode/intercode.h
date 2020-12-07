@@ -51,6 +51,8 @@ enum OPTYPE
     FUNCTION_CALL,      // CALL name
     PARAM,              // PARAM
     ARG,                // ARG
+    OP_LABEL,           // LABEL
+    GOTO,               // GOTO
     ARRAY_DECLARATION,  // DEC 
     OP_RETURN,          // RETURN
     STRUCT_DEFINITION,  // struct
@@ -74,7 +76,6 @@ public:
 class InterCode 
 {
 private:
-    int label;
     VarPair result;
     OPTYPE op;
     VarPair arg1;
@@ -86,7 +87,6 @@ public:
     InterCode(OPTYPE op, VarPair result);
     InterCode(VarPair arg, OPTYPE op, VarPair result);
     InterCode(VarPair arg1, VarPair arg2, OPTYPE op, VarPair result);
-    void setLabel(int n);
     void setResult(VarPair result);
     void setOperator(OPTYPE op);
     void setArgFirst(VarPair arg1);
@@ -119,6 +119,7 @@ private:
     std::unordered_map<int, int> constant_pool;
     void classify();
     void arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_result);
+    void makeConditions(ASTNode* condition, VarPair success, VarPair failure);
     void addConst(int value, int index);
     int checkConst(int value);
 public:
