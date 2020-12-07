@@ -231,7 +231,7 @@ relational_expression
     }
 	| relational_expression LE_OP additive_expression {
         if ($1 -> msg != "Relational Expression") {
-            $$ = new ASTNode(NodeType::EXPR, "Relational Expression", idx ++, "relational_op:<");
+            $$ = new ASTNode(NodeType::EXPR, "Relational Expression", idx ++, "relational_op:<=");
             $$ -> addChild($1); $$ -> addChild($3);
         } else {
             $$ = $1;
@@ -240,7 +240,7 @@ relational_expression
     }
 	| relational_expression GE_OP additive_expression {
         if ($1 -> msg != "Relational Expression") {
-            $$ = new ASTNode(NodeType::EXPR, "Relational Expression", idx ++, "relational_op:<");
+            $$ = new ASTNode(NodeType::EXPR, "Relational Expression", idx ++, "relational_op:>=");
             $$ -> addChild($1); $$ -> addChild($3);
         } else {
             $$ = $1;
@@ -693,7 +693,7 @@ jump_statement
 	| RETURN expression ';' {
         $$ = new ASTNode(NodeType::JUMP_STMT, "Jump Statement", idx ++, "return expr");
         $$ -> addChild($2);
-        $2 -> msg = "Returned Expression";
+        // $2 -> msg = "Returned Expression";
     }
 	;
 
