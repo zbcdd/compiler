@@ -795,28 +795,13 @@ int InterCodeList::checkConst(int value)
         return -1;
 };
 
-InterCodeList::InterCodeList()
-{
-    this -> root_list = new Varlistnode();
-};
-
-int InterCodeList::getListSize()
-{
-    return this -> list.size();
-};
-
-void InterCodeList::read(ASTNode* root)
-{
-    this -> read(root, this -> root_list);
-};
-
-void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
+void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label, VarPair continue_label)
 {
     if (root -> msg == "Translation Unit") {
         std::vector<ASTNode*>* temp = root -> getChildren();
         for (auto iter = (*temp).begin(); iter != (*temp).end(); iter ++)
         {
-            this -> read(*iter, vlist);
+            this -> read(*iter, vlist, break_label, continue_label);
         }
     }
     else if (root -> msg == "Function Definition")
@@ -827,7 +812,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
         {
             temp -> setResult(VarPair(FUNC, (*(root -> getChildren()))[1] -> name));
             (this -> list).push_back(*temp);
-            this -> read((*(root -> getChildren()))[2], vlist);
+            this -> read((*(root -> getChildren()))[2], vlist, break_label, continue_label);
             // not the final version
         }
         else if ((*(root -> getChildren()))[1] -> msg == "Function Declaration")
@@ -858,7 +843,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
         std::vector<ASTNode*>* temp = root -> getChildren();
         for (auto iter = (*temp).begin(); iter != (*temp).end(); iter ++)
         {
-            this -> read(*iter, newlist);
+            this -> read(*iter, newlist, break_label, continue_label);
         }
     }
     else if (root -> msg == "Var Declaration") 
@@ -1298,51 +1283,79 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             }
         }
     }
-    // else if (root -> msg == "Jump Statement")
-    // {
-    //     ASTNode* expression = (*(root -> getChildren()))[0];
-    //     if (expression -> msg == "ID Declaration")
-    //     {
-    //         VarPair var = vlist -> findVar(expression -> name);
-    //         if (var.type == NULL_ARG)
-    //         {
-    //             printf("%s\n", expression -> name.c_str());
-    //             printf("error: variable undefined\n");
-    //             // error: variable undefined
-    //         }
-    //         else
-    //         {
-    //             (this -> list).push_back(InterCode(ARG, var));
-    //             (this -> list).push_back(InterCode(OP_PRINT));
-    //         }
-    //     }
-    //     else if (expression -> msg == "Const Declaration")
-    //     {
-    //         int const_value = atoi(expression -> name.c_str());
-    //         int temp_index = this -> checkConst(const_value);
-    //         VarPair const_output;
-    //         if(temp_index == -1)
-    //         {
-    //             this -> addConst(const_value, temp_count);
-    //             const_output = VarPair(TEMP, temp_count++);
-    //             VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
-    //             (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, const_output));
-    //         }
-    //         else
-    //             const_output = VarPair(TEMP, temp_index);
-    //         (this -> list).push_back(InterCode(ARG, const_output));
-    //         (this -> list).push_back(InterCode(OP_PRINT));
-    //     }
-    //     else
-    //     {
-    //         VarPair outputer = VarPair(TEMP, temp_count++);
-    //         this -> arithmetic(expression, vlist, outputer); 
-    //         if(expression -> msg == "Expr")
-    //             outputer.usage = CONTENT;
-    //         (this -> list).push_back(InterCode(ARG, outputer));
-    //         (this -> list).push_back(InterCode(OP_PRINT));
-    //     }
-    // }
+    else if (root -> msg == "Jump Statement")
+    {
+        if(root -> name == "break")
+        {
+            if (break_label.type == LABEL)
+                (this -> list).push_back(InterCode(GOTO, break_label));
+            else
+            {
+                printf("error: 'break' cannot be used outside a loop\n");
+                //error: 'break' cannot be used outside a loop
+            }
+        }
+        else if (root -> name == "continue")
+        {
+            if (continue_label.type == LABEL)
+                (this -> list).push_back(InterCode(GOTO, continue_label));
+            else
+            {
+                printf("error: 'continue' cannot be used outside a loop\n");
+                //error: 'continue' cannot be used outside a loop
+            }
+        }
+        else if (root -> name == "return expr")
+        {
+        //     ASTNode* expression = (*(root -> getChildren()))[0];
+        //     if (expression -> msg == "ID Declaration")
+        //     {
+        //         VarPair var = vlist -> findVar(expression -> name);
+        //         if (var.type == NULL_ARG)
+        //         {
+        //             printf("%s\n", expression -> name.c_str());
+        //             printf("error: variable undefined\n");
+        //             // error: variable undefined
+        //         }
+        //         else
+        //         {
+        //             (this -> list).push_back(InterCode(ARG, var));
+        //             (this -> list).push_back(InterCode(OP_PRINT));
+        //         }
+        //     }
+        //     else if (expression -> msg == "Const Declaration")
+        //     {
+        //         int const_value = atoi(expression -> name.c_str());
+        //         int temp_index = this -> checkConst(const_value);
+        //         VarPair const_output;
+        //         if(temp_index == -1)
+        //         {
+        //             this -> addConst(const_value, temp_count);
+        //             const_output = VarPair(TEMP, temp_count++);
+        //             VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+        //             (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, const_output));
+        //         }
+        //         else
+        //             const_output = VarPair(TEMP, temp_index);
+        //         (this -> list).push_back(InterCode(ARG, const_output));
+        //         (this -> list).push_back(InterCode(OP_PRINT));
+        //     }
+        //     else
+        //     {
+        //         VarPair outputer = VarPair(TEMP, temp_count++);
+        //         this -> arithmetic(expression, vlist, outputer); 
+        //         if(expression -> msg == "Expr")
+        //             outputer.usage = CONTENT;
+        //         (this -> list).push_back(InterCode(ARG, outputer));
+        //         (this -> list).push_back(InterCode(OP_PRINT));
+        //     }
+        // }
+        // else
+        // {
+        //     printf("Jump Statement: error: there shouldn't be other possibilities\n");
+        //     //error: there shouldn't be other possibilities
+        }
+    }
     else if (root -> msg == "Repeat Statement")
     {
         if (root -> name == "while")
@@ -1355,7 +1368,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             (this -> list).push_back(InterCode(OP_LABEL, loop_start));
             this -> makeConditions(condition, loop_continue, loop_leave);
             (this -> list).push_back(InterCode(OP_LABEL, loop_continue));
-            this -> read(order, vlist);
+            this -> read(order, vlist, loop_leave, loop_start);
             (this -> list).push_back(InterCode(GOTO, loop_start));
             (this -> list).push_back(InterCode(OP_LABEL, loop_leave));
         }
@@ -1365,15 +1378,15 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             ASTNode* condition = (*(root -> getChildren()))[1];
             ASTNode* after_each_loop = (*(root -> getChildren()))[2];
             ASTNode* order = (*(root -> getChildren()))[3];
-            this -> read(before_loop, vlist);
+            this -> read(before_loop, vlist, break_label, continue_label);
             VarPair loop_start = VarPair(LABEL, label_count++);
             VarPair loop_leave = VarPair(LABEL, label_count++);
             VarPair loop_continue = VarPair(LABEL, label_count++);
             (this -> list).push_back(InterCode(OP_LABEL, loop_start));
             this -> makeConditions(condition, loop_continue, loop_leave);
             (this -> list).push_back(InterCode(OP_LABEL, loop_continue));
-            this -> read(order, vlist);
-            this -> read(after_each_loop, vlist);
+            this -> read(order, vlist, loop_leave, loop_start);
+            this -> read(after_each_loop, vlist, break_label, continue_label);
             (this -> list).push_back(InterCode(GOTO, loop_start));
             (this -> list).push_back(InterCode(OP_LABEL, loop_leave));
         }
@@ -1394,7 +1407,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             VarPair failure = VarPair(LABEL, label_count++);
             this -> makeConditions(condition, success, failure);
             (this -> list).push_back(InterCode(OP_LABEL, success));
-            this -> read(order, vlist);
+            this -> read(order, vlist, break_label, continue_label);
             (this -> list).push_back(InterCode(OP_LABEL, failure));
         }
         else if (children -> size() == 3)
@@ -1404,9 +1417,9 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
             VarPair failure = VarPair(LABEL, label_count++);
             this -> makeConditions(condition, success, failure);
             (this -> list).push_back(InterCode(OP_LABEL, success));
-            this -> read(order, vlist);
+            this -> read(order, vlist, break_label, continue_label);
             (this -> list).push_back(InterCode(OP_LABEL, failure));
-            this -> read(order_if_failure, vlist);
+            this -> read(order_if_failure, vlist, break_label, continue_label);
         }
         else
         {
@@ -1420,6 +1433,22 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist)
     }
     else if (root -> msg == "") {}
     // to be completed
+};
+
+// public
+InterCodeList::InterCodeList()
+{
+    this -> root_list = new Varlistnode();
+};
+
+int InterCodeList::getListSize()
+{
+    return this -> list.size();
+};
+
+void InterCodeList::read(ASTNode* root)
+{
+    this -> read(root, this -> root_list, VarPair(), VarPair());
 };
 
 void InterCodeList::printCodeList()

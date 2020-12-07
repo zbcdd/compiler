@@ -122,10 +122,10 @@ private:
     void makeConditions(ASTNode* condition, VarPair success, VarPair failure);
     void addConst(int value, int index);
     int checkConst(int value);
+    void read(ASTNode* root, Varlistnode* vlist, VarPair break_label, VarPair continue_label);
 public:
     InterCodeList();
     int getListSize();
     void read(ASTNode* root);
-    void read(ASTNode* root, Varlistnode* vlist);
     void printCodeList();
 };
