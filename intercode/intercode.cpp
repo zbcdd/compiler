@@ -175,6 +175,26 @@ void InterCode::setArgSecond(VarPair arg2)
     this -> arg2 = arg2;
 };
 
+VarPair InterCode::getResult()
+{
+    return this -> result;
+};
+
+OPTYPE InterCode::getOperator()
+{
+    return this -> op;
+};
+
+VarPair InterCode::getArgFirst()
+{
+    return this -> arg1;
+};
+
+VarPair InterCode::getArgSecond()
+{
+    return this -> arg2;
+};
+
 std::string InterCode::printCode()
 {
     std::string code = "";
@@ -917,21 +937,39 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
     if (condition -> msg == "Logical OR Expression")
     {
         std::vector<ASTNode*>* children = condition -> getChildren();
+        VarPair new_failure;
         for (auto iter = children -> begin(); iter != children -> end(); iter++)
         {
-            this -> makeConditions(*iter, success, failure, 1, vlist);
+            if (iter != children -> begin())
+                (this -> list).push_back(InterCode(OP_LABEL, new_failure));
+            if (iter != children -> end() - 1)
+            {
+                new_failure = VarPair(LABEL, label_count++);
+                this -> makeConditions(*iter, success, new_failure, 1, vlist);
+            }
+            else
+                this -> makeConditions(*iter, success, failure, 1, vlist);
         }
-        if (codetype == 2)
+        if (codetype != 1)
             (this -> list).push_back(InterCode(GOTO, failure));
     }
     else if (condition -> msg == "Logical AND Expression")
     {
         std::vector<ASTNode*>* children = condition -> getChildren();
+        VarPair new_success;
         for (auto iter = children -> begin(); iter != children -> end(); iter++)
         {
-            this -> makeConditions(*iter, success, failure, 2, vlist);
+            if (iter != children -> begin())
+                (this -> list).push_back(InterCode(OP_LABEL, new_success));
+            if (iter != children -> end() - 1)
+            {
+                new_success = VarPair(LABEL, label_count++);
+                this -> makeConditions(*iter, new_success, failure, 2, vlist);
+            }
+            else
+                this -> makeConditions(*iter, new_success, failure, 2, vlist);
         }
-        if (codetype == 1)
+        if (codetype != 2)
             (this -> list).push_back(InterCode(GOTO, success));
     }
     else if (condition -> msg == "Logical not expression")
@@ -1018,8 +1056,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 op = JUMP_EQUALS;
             else
                 op = FJUMP_EQUALS;
-            if (codetype == 0)
-                (this -> list).push_back(InterCode(GOTO, failure));
         }
         else if (condition -> name == "equality_op:!=")
         {
@@ -1027,8 +1063,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 op = JUMP_UNEQUAL;
             else
                 op = FJUMP_UNEQUAL;
-            if (codetype == 0)
-                (this -> list).push_back(InterCode(GOTO, failure));
         }
         else
         {
@@ -1121,8 +1155,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 op = JUMP_S;
             else
                 op = FJUMP_S;
-            if (codetype == 0)
-                (this -> list).push_back(InterCode(GOTO, failure));
         }
         else if (condition -> name == "relational_op:<=")
         {
@@ -1130,8 +1162,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 op = JUMP_SOE;
             else
                 op = FJUMP_SOE;
-            if (codetype == 0)
-                (this -> list).push_back(InterCode(GOTO, failure));
         }
         else if (condition -> name == "relational_op:>")
         {
@@ -1139,8 +1169,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 op = JUMP_L;
             else
                 op = FJUMP_L;
-            if (codetype == 0)
-                (this -> list).push_back(InterCode(GOTO, failure));
         }
         else if (condition -> name == "relational_op:>=")
         {
@@ -1148,8 +1176,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 op = JUMP_LOE;
             else
                 op = FJUMP_LOE;
-            if (codetype == 0)
-                (this -> list).push_back(InterCode(GOTO, failure));
         }
         else
         {
@@ -1873,11 +1899,14 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             ASTNode* order_if_failure = (*children)[2];
             VarPair success = VarPair(LABEL, label_count++);
             VarPair failure = VarPair(LABEL, label_count++);
+            VarPair follow = VarPair(LABEL, label_count++);
             this -> makeConditions(condition, success, failure, 0, vlist);
             (this -> list).push_back(InterCode(OP_LABEL, success));
             this -> read(order, vlist, break_label, continue_label);
+            (this -> list).push_back(InterCode(GOTO, follow));
             (this -> list).push_back(InterCode(OP_LABEL, failure));
             this -> read(order_if_failure, vlist, break_label, continue_label);
+            (this -> list).push_back(InterCode(OP_LABEL, follow));
         }
         else
         {
@@ -1891,6 +1920,57 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
     }
     else if (root -> msg == "") {}
     // to be completed
+};
+
+void InterCodeList::label_recycle()
+{
+    bool* label_used = new bool[this -> label_count];
+    for (int i = 0; i < this -> label_count; i++)
+        label_used[i] = false;
+    for (auto iter = (this -> list).begin(); iter != (this -> list).end(); iter++)
+        if ((*iter).getResult().type == LABEL && (*iter).getOperator() != OP_LABEL)
+        {
+            int label_index = (*iter).getResult().index;
+            label_used[label_index] = true;
+        }
+    for(int i = 0; i < this -> label_count; i++)
+    {
+        int recycle_count = 0;
+        for (auto iter = (this -> list).begin(); iter != (this -> list).end();)
+            if ((*iter).getOperator() == OP_LABEL && label_used[(*iter).getResult().index] == false)
+            {
+                iter = (this -> list).erase(iter);
+                recycle_count++;
+            }
+            else if ((*iter).getOperator() == GOTO && iter != (this -> list).end() - 1 
+            && (*(iter + 1)).getOperator() == OP_LABEL 
+            && (*(iter + 1)).getResult().index == (*iter).getResult().index)
+            {
+                iter = (this -> list).erase(iter);
+                recycle_count++;
+            }
+            else if ((*iter).getOperator() == GOTO && iter != (this -> list).begin() 
+            && (*(iter - 1)).getOperator() == GOTO)
+            {
+                iter = (this -> list).erase(iter);
+                recycle_count++;
+            }
+            else if ((*iter).getOperator() == OP_LABEL && iter != (this -> list).end() - 1 
+            && (*(iter + 1)).getOperator() == OP_LABEL)
+            {
+                int index_this = (*iter).getResult().index;
+                int index_next = (*(iter + 1)).getResult().index;
+                for (auto iter1 = (this -> list).begin();  iter1 != (this -> list).end(); iter1++)
+                    if ((*iter1).getOperator() == GOTO && (*iter1).getResult().index == index_this)
+                        (*iter1).setResult(VarPair(LABEL, index_next));
+                iter = (this -> list).erase(iter);
+                recycle_count++;
+            }
+            else
+                iter++;
+        if (recycle_count == 0)
+            break;
+    }
 };
 
 // public
@@ -1907,6 +1987,7 @@ int InterCodeList::getListSize()
 void InterCodeList::read(ASTNode* root)
 {
     this -> read(root, this -> root_list, VarPair(), VarPair());
+    this -> label_recycle();
 };
 
 void InterCodeList::printCodeList()
@@ -1916,5 +1997,4 @@ void InterCodeList::printCodeList()
     {    
         printf("%s", (*iter).printCode().c_str());
     }
-    // to be completed
 };

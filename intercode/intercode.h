@@ -99,6 +99,11 @@ public:
     void setOperator(OPTYPE op);
     void setArgFirst(VarPair arg1);
     void setArgSecond(VarPair arg2);
+    VarPair getResult();
+    OPTYPE getOperator();
+    VarPair getArgFirst();
+    VarPair getArgSecond();
+
     std::string printCode();
 };
 
@@ -131,6 +136,7 @@ private:
     void addConst(int value, int index);
     int checkConst(int value);
     void read(ASTNode* root, Varlistnode* vlist, VarPair break_label, VarPair continue_label);
+    void label_recycle();
 public:
     InterCodeList();
     int getListSize();
