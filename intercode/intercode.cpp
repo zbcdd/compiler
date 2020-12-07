@@ -773,9 +773,49 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         (this -> list).push_back(InterCode(left_value, right_value, op, temp_result));
 };
 
-void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair failure)
+void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair failure, bool codetype)
 {
-    
+    if (condition -> msg == "Logical OR Expression")
+    {
+        std::vector<ASTNode*>* children = condition -> getChildren();
+        for (auto iter = children -> begin(); iter != children -> end(); iter++)
+        {
+            this -> makeConditions(*iter, success, failure, true);
+        }
+    }
+    else if (condition -> msg == "Logical AND Expression")
+    {
+        std::vector<ASTNode*>* children = condition -> getChildren();
+        for (auto iter = children -> begin(); iter != children -> end(); iter++)
+        {
+            this -> makeConditions(*iter, success, failure, false);
+        }
+    }
+    else if (condition -> msg == "Logical NOT Expression")
+    {
+        ASTNode* child = (*(condition -> getChildren()))[0];
+        this -> makeConditions(child, failure, success, codetype);
+    }
+    else if (condition -> msg == "Equality Expression")
+    {
+        
+    }
+    else if (condition -> msg == "Relational Expression")
+    {
+
+    }
+    else if (condition -> msg == "ID Declaration")
+    {
+
+    }
+    else if (condition -> msg == "Const Declaration")
+    {
+
+    }
+    else
+    {
+
+    }
     // to be completed
 };
 
@@ -1366,7 +1406,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             VarPair loop_leave = VarPair(LABEL, label_count++);
             VarPair loop_continue = VarPair(LABEL, label_count++);
             (this -> list).push_back(InterCode(OP_LABEL, loop_start));
-            this -> makeConditions(condition, loop_continue, loop_leave);
+            this -> makeConditions(condition, loop_continue, loop_leave, true);
             (this -> list).push_back(InterCode(OP_LABEL, loop_continue));
             this -> read(order, vlist, loop_leave, loop_start);
             (this -> list).push_back(InterCode(GOTO, loop_start));
@@ -1383,7 +1423,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             VarPair loop_leave = VarPair(LABEL, label_count++);
             VarPair loop_continue = VarPair(LABEL, label_count++);
             (this -> list).push_back(InterCode(OP_LABEL, loop_start));
-            this -> makeConditions(condition, loop_continue, loop_leave);
+            this -> makeConditions(condition, loop_continue, loop_leave, true);
             (this -> list).push_back(InterCode(OP_LABEL, loop_continue));
             this -> read(order, vlist, loop_leave, loop_start);
             this -> read(after_each_loop, vlist, break_label, continue_label);
@@ -1405,7 +1445,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
         {
             VarPair success = VarPair(LABEL, label_count++);
             VarPair failure = VarPair(LABEL, label_count++);
-            this -> makeConditions(condition, success, failure);
+            this -> makeConditions(condition, success, failure, true);
             (this -> list).push_back(InterCode(OP_LABEL, success));
             this -> read(order, vlist, break_label, continue_label);
             (this -> list).push_back(InterCode(OP_LABEL, failure));
@@ -1415,7 +1455,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             ASTNode* order_if_failure = (*children)[2];
             VarPair success = VarPair(LABEL, label_count++);
             VarPair failure = VarPair(LABEL, label_count++);
-            this -> makeConditions(condition, success, failure);
+            this -> makeConditions(condition, success, failure, true);
             (this -> list).push_back(InterCode(OP_LABEL, success));
             this -> read(order, vlist, break_label, continue_label);
             (this -> list).push_back(InterCode(OP_LABEL, failure));

@@ -24,11 +24,26 @@ int main()
     // }
     // cout << j;
     int k = 0;
-    if (k == 0||k <= 0||k >= 0||k < 0||k > 0||k != 0)
+    // int a = 4;
+    // int b = -3;
+    // printf("%d\n", a%b);
+    if (k == 0||k <= 0&&k >= 0)
     {
-        break;
-        continue;
+        // break;
+        // continue;
         // cout << k;
     }
+    // if (k == 0&&k <= 0&&k >= 0||k < 0||k > 0||k != 0||(k = 0)||(k + 1)||k||0)
+    // {
+    //     // break;
+    //     // continue;
+    //     // cout << k;
+    // }
+    // if (!(k == 0||k <= 0||k >= 0||k < 0||k > 0||k != 0||(k = 0)||(k + 1)||!k||!0))
+    // {
+    //     // break;
+    //     // continue;
+    //     // cout << k;
+    // }
     return 0;
 }

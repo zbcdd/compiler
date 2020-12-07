@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unordered_map>
 #include <iostream>
 #include <sstream>
@@ -45,8 +46,15 @@ enum OPTYPE
     JUMP_L,             // IF > GOTO
     JUMP_S,             // IF < GOTO
     JUMP_EQUALS,        // IF == GOTO
+    JUMP_UNEQUAL,       // IF != GOTO
     JUMP_LOE,           // IF <= GOTO
     JUMP_SOE,           // IF >= GOTO
+    FJUMP_L,            // IFNOT > GOTO
+    FJUMP_S,            // IFNOT < GOTO
+    FJUMP_EQUALS,       // IFNOT == GOTO
+    FJUMP_UNEQUAL,      // IFNOT != GOTO
+    FJUMP_LOE,          // IFNOT <= GOTO
+    FJUMP_SOE,          // IFNOT >= GOTO
     FUNC_DEF,           // FUNCTION name
     FUNCTION_CALL,      // CALL name
     PARAM,              // PARAM
@@ -119,7 +127,7 @@ private:
     std::unordered_map<int, int> constant_pool;
     void classify();
     void arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_result);
-    void makeConditions(ASTNode* condition, VarPair success, VarPair failure);
+    void makeConditions(ASTNode* condition, VarPair success, VarPair failure, bool codetype);
     void addConst(int value, int index);
     int checkConst(int value);
     void read(ASTNode* root, Varlistnode* vlist, VarPair break_label, VarPair continue_label);
