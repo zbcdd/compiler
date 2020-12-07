@@ -27,7 +27,7 @@ int main()
     // int a = 4;
     // int b = -3;
     // printf("%d\n", a%b);
-    if (k == 0||k <= 0&&k >= 0)
+    if (k == 0||k != 0&&k >= 0)
     {
         // break;
         // continue;

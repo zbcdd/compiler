@@ -307,6 +307,145 @@ std::string InterCode::printCode()
             code += "\n";
             break;
         }
+        case OP_RETURN:
+        {
+            code += "RETURN ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case JUMP_L:
+        {
+            code += "IF ";
+            code += toString(this -> arg1);
+            code += " > ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case JUMP_S:
+        {
+            code += "IF ";
+            code += toString(this -> arg1);
+            code += " < ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case JUMP_LOE:
+        {
+            code += "IF ";
+            code += toString(this -> arg1);
+            code += " >= ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case JUMP_SOE:
+        {
+            code += "IF ";
+            code += toString(this -> arg1);
+            code += " <= ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case JUMP_EQUALS:
+        {
+            code += "IF ";
+            code += toString(this -> arg1);
+            code += " == ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case JUMP_UNEQUAL:
+        {
+            code += "IF ";
+            code += toString(this -> arg1);
+            code += " != ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case FJUMP_L:
+        {
+            code += "IFNOT ";
+            code += toString(this -> arg1);
+            code += " > ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case FJUMP_S:
+        {
+            code += "IFNOT ";
+            code += toString(this -> arg1);
+            code += " < ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case FJUMP_LOE:
+        {
+            code += "IFNOT ";
+            code += toString(this -> arg1);
+            code += " >= ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case FJUMP_SOE:
+        {
+            code += "IFNOT ";
+            code += toString(this -> arg1);
+            code += " <= ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case FJUMP_EQUALS:
+        {
+            code += "IFNOT ";
+            code += toString(this -> arg1);
+            code += " == ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case FJUMP_UNEQUAL:
+        {
+            code += "IFNOT ";
+            code += toString(this -> arg1);
+            code += " != ";
+            code += toString(this -> arg2);
+            code += " GOTO ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
         case NULL_ARG:
         {
             /* code */
@@ -773,50 +912,332 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         (this -> list).push_back(InterCode(left_value, right_value, op, temp_result));
 };
 
-void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair failure, bool codetype)
+void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair failure, int codetype, Varlistnode* vlist)
 {
     if (condition -> msg == "Logical OR Expression")
     {
         std::vector<ASTNode*>* children = condition -> getChildren();
         for (auto iter = children -> begin(); iter != children -> end(); iter++)
         {
-            this -> makeConditions(*iter, success, failure, true);
+            this -> makeConditions(*iter, success, failure, 1, vlist);
         }
+        if (codetype == 2)
+            (this -> list).push_back(InterCode(GOTO, failure));
     }
     else if (condition -> msg == "Logical AND Expression")
     {
         std::vector<ASTNode*>* children = condition -> getChildren();
         for (auto iter = children -> begin(); iter != children -> end(); iter++)
         {
-            this -> makeConditions(*iter, success, failure, false);
+            this -> makeConditions(*iter, success, failure, 2, vlist);
         }
+        if (codetype == 1)
+            (this -> list).push_back(InterCode(GOTO, success));
     }
-    else if (condition -> msg == "Logical NOT Expression")
+    else if (condition -> msg == "Logical not expression")
     {
         ASTNode* child = (*(condition -> getChildren()))[0];
-        this -> makeConditions(child, failure, success, codetype);
+        this -> makeConditions(child, failure, success, codetype, vlist);
     }
     else if (condition -> msg == "Equality Expression")
     {
-        
+        ASTNode* left = (*(condition->getChildren()))[0];
+        ASTNode* right = (*(condition->getChildren()))[1];
+        VarPair left_value;
+        VarPair right_value;
+        OPTYPE op;
+        if (left -> msg == "ID Declaration")
+        {
+            left_value = vlist -> findVar(left -> name);
+            if(left_value.type == NULL_ARG)
+            {
+                printf("%s\n", left -> name.c_str());
+                printf("error: variable undefined\n");
+                //error: variable undefined
+            }
+            else
+            {
+                
+            }
+        }
+        else if (left -> msg == "Const Declaration")
+        {
+            int const_value = atoi(left -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                left_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, left_value));
+            }
+            else
+                left_value = VarPair(TEMP, temp_index);
+        }
+        else
+        {
+            left_value = VarPair(TEMP, temp_count++);
+            this -> arithmetic(left, vlist, left_value);
+        }
+        if (right -> msg == "ID Declaration")
+        {
+            right_value = vlist -> findVar(right -> name);
+            if(right_value.type == NULL_ARG)
+            {
+                printf("%s\n", right -> name.c_str());
+                printf("error: variable undefined\n");
+                //error: variable undefined
+            }
+            else
+            {
+                
+            }
+        }
+        else if (right -> msg == "Const Declaration")
+        {
+            int const_value = atoi(right -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                right_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            }
+            else
+                right_value = VarPair(TEMP, temp_index);
+        }
+        else
+        {
+            right_value = VarPair(TEMP, temp_count++);
+            this -> arithmetic(right, vlist, right_value);
+        }
+        if (condition -> name == "equality_op:==")
+        {
+            if (codetype != 2)
+                op = JUMP_EQUALS;
+            else
+                op = FJUMP_EQUALS;
+            if (codetype == 0)
+                (this -> list).push_back(InterCode(GOTO, failure));
+        }
+        else if (condition -> name == "equality_op:!=")
+        {
+            if (codetype != 2)
+                op = JUMP_UNEQUAL;
+            else
+                op = FJUMP_UNEQUAL;
+            if (codetype == 0)
+                (this -> list).push_back(InterCode(GOTO, failure));
+        }
+        else
+        {
+            printf("Equality Expression: error: there shouldn't be other possibilities\n");
+            // error: there shouldn't be other possibilities
+        }
+        if (codetype != 2)
+            (this -> list).push_back(InterCode(left_value, right_value, op, success));
+        else
+            (this -> list).push_back(InterCode(left_value, right_value, op, failure));
+        if (codetype == 0)
+            (this -> list).push_back(InterCode(GOTO, failure));
     }
     else if (condition -> msg == "Relational Expression")
     {
-
+        ASTNode* left = (*(condition->getChildren()))[0];
+        ASTNode* right = (*(condition->getChildren()))[1];
+        VarPair left_value;
+        VarPair right_value;
+        OPTYPE op;
+        if (left -> msg == "ID Declaration")
+        {
+            left_value = vlist -> findVar(left -> name);
+            if(left_value.type == NULL_ARG)
+            {
+                printf("%s\n", left -> name.c_str());
+                printf("error: variable undefined\n");
+                //error: variable undefined
+            }
+            else
+            {
+                
+            }
+        }
+        else if (left -> msg == "Const Declaration")
+        {
+            int const_value = atoi(left -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                left_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, left_value));
+            }
+            else
+                left_value = VarPair(TEMP, temp_index);
+        }
+        else
+        {
+            left_value = VarPair(TEMP, temp_count++);
+            this -> arithmetic(left, vlist, left_value);
+        }
+        if (right -> msg == "ID Declaration")
+        {
+            right_value = vlist -> findVar(right -> name);
+            if(right_value.type == NULL_ARG)
+            {
+                printf("%s\n", right -> name.c_str());
+                printf("error: variable undefined\n");
+                //error: variable undefined
+            }
+            else
+            {
+                
+            }
+        }
+        else if (right -> msg == "Const Declaration")
+        {
+            int const_value = atoi(right -> name.c_str());
+            int temp_index = this -> checkConst(const_value);
+            if(temp_index == -1)
+            {
+                this -> addConst(const_value, temp_count);
+                right_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+            }
+            else
+                right_value = VarPair(TEMP, temp_index);
+        }
+        else
+        {
+            right_value = VarPair(TEMP, temp_count++);
+            this -> arithmetic(right, vlist, right_value);
+        }
+        if (condition -> name == "relational_op:<")
+        {
+            if (codetype != 2)
+                op = JUMP_S;
+            else
+                op = FJUMP_S;
+            if (codetype == 0)
+                (this -> list).push_back(InterCode(GOTO, failure));
+        }
+        else if (condition -> name == "relational_op:<=")
+        {
+            if (codetype != 2)
+                op = JUMP_SOE;
+            else
+                op = FJUMP_SOE;
+            if (codetype == 0)
+                (this -> list).push_back(InterCode(GOTO, failure));
+        }
+        else if (condition -> name == "relational_op:>")
+        {
+            if (codetype != 2)
+                op = JUMP_L;
+            else
+                op = FJUMP_L;
+            if (codetype == 0)
+                (this -> list).push_back(InterCode(GOTO, failure));
+        }
+        else if (condition -> name == "relational_op:>=")
+        {
+            if (codetype != 2)
+                op = JUMP_LOE;
+            else
+                op = FJUMP_LOE;
+            if (codetype == 0)
+                (this -> list).push_back(InterCode(GOTO, failure));
+        }
+        else
+        {
+            printf("Relational Expression: error: there shouldn't be other possibilities\n");
+            // error: there shouldn't be other possibilities
+        }
+        if (left -> msg == "Expr")
+        {
+            left_value.usage = CONTENT;
+        }
+        if (right -> msg == "Expr")
+        {
+            right_value.usage = CONTENT;
+        }
+        if (codetype != 2)
+            (this -> list).push_back(InterCode(left_value, right_value, op, success));
+        else
+            (this -> list).push_back(InterCode(left_value, right_value, op, failure));
+        if (codetype == 0)
+            (this -> list).push_back(InterCode(GOTO, failure));
     }
     else if (condition -> msg == "ID Declaration")
     {
-
+        VarPair var = vlist -> findVar(condition -> name);
+        if(var.type == NULL_ARG)
+        {
+            printf("%s\n", condition -> name.c_str());
+            printf("error: variable undefined\n");
+            //error: variable undefined
+        }
+        else
+        {
+            
+        }
+        VarPair zero_temp;
+        int temp_index = this -> checkConst(0);
+        if(temp_index == -1)
+        {
+            this -> addConst(0, temp_count);
+            zero_temp = VarPair(TEMP, temp_count++);
+            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, 0);
+            (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, zero_temp));
+        }
+        else
+            zero_temp = VarPair(TEMP, temp_index);
+        if (codetype != 2)
+            (this -> list).push_back(InterCode(var, zero_temp, JUMP_UNEQUAL, success));
+        else
+            (this -> list).push_back(InterCode(var, zero_temp, FJUMP_UNEQUAL, failure));
+        if (codetype == 0)
+            (this -> list).push_back(InterCode(GOTO, failure));
     }
     else if (condition -> msg == "Const Declaration")
     {
-
+        VarPair const_temp;
+        int const_value = atoi(condition -> name.c_str());
+        int temp_index = this -> checkConst(const_value);
+        if(temp_index == -1)
+        {
+            this -> addConst(const_value, temp_count);
+            const_temp = VarPair(TEMP, temp_count++);
+            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+            (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, const_temp));
+        }
+        else
+            const_temp = VarPair(TEMP, temp_index);
+        VarPair zero_temp;
+        temp_index = this -> checkConst(0);
+        if(temp_index == -1)
+        {
+            this -> addConst(0, temp_count);
+            zero_temp = VarPair(TEMP, temp_count++);
+            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, 0);
+            (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, zero_temp));
+        }
+        else
+            zero_temp = VarPair(TEMP, temp_index);
+        if (codetype != 2)
+            (this -> list).push_back(InterCode(const_temp, zero_temp, JUMP_UNEQUAL, success));
+        else
+            (this -> list).push_back(InterCode(const_temp, zero_temp, FJUMP_UNEQUAL, failure));
+        if (codetype == 0)
+            (this -> list).push_back(InterCode(GOTO, failure));
     }
     else
     {
 
     }
-    // to be completed
 };
 
 void InterCodeList::addConst(int value, int index)
@@ -1347,53 +1768,50 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
         }
         else if (root -> name == "return expr")
         {
-        //     ASTNode* expression = (*(root -> getChildren()))[0];
-        //     if (expression -> msg == "ID Declaration")
-        //     {
-        //         VarPair var = vlist -> findVar(expression -> name);
-        //         if (var.type == NULL_ARG)
-        //         {
-        //             printf("%s\n", expression -> name.c_str());
-        //             printf("error: variable undefined\n");
-        //             // error: variable undefined
-        //         }
-        //         else
-        //         {
-        //             (this -> list).push_back(InterCode(ARG, var));
-        //             (this -> list).push_back(InterCode(OP_PRINT));
-        //         }
-        //     }
-        //     else if (expression -> msg == "Const Declaration")
-        //     {
-        //         int const_value = atoi(expression -> name.c_str());
-        //         int temp_index = this -> checkConst(const_value);
-        //         VarPair const_output;
-        //         if(temp_index == -1)
-        //         {
-        //             this -> addConst(const_value, temp_count);
-        //             const_output = VarPair(TEMP, temp_count++);
-        //             VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
-        //             (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, const_output));
-        //         }
-        //         else
-        //             const_output = VarPair(TEMP, temp_index);
-        //         (this -> list).push_back(InterCode(ARG, const_output));
-        //         (this -> list).push_back(InterCode(OP_PRINT));
-        //     }
-        //     else
-        //     {
-        //         VarPair outputer = VarPair(TEMP, temp_count++);
-        //         this -> arithmetic(expression, vlist, outputer); 
-        //         if(expression -> msg == "Expr")
-        //             outputer.usage = CONTENT;
-        //         (this -> list).push_back(InterCode(ARG, outputer));
-        //         (this -> list).push_back(InterCode(OP_PRINT));
-        //     }
-        // }
-        // else
-        // {
-        //     printf("Jump Statement: error: there shouldn't be other possibilities\n");
-        //     //error: there shouldn't be other possibilities
+            ASTNode* expression = (*(root -> getChildren()))[0];
+            if (expression -> msg == "ID Declaration")
+            {
+                VarPair var = vlist -> findVar(expression -> name);
+                if (var.type == NULL_ARG)
+                {
+                    printf("%s\n", expression -> name.c_str());
+                    printf("error: variable undefined\n");
+                    // error: variable undefined
+                }
+                else
+                {
+                    (this -> list).push_back(InterCode(OP_RETURN, var));
+                }
+            }
+            else if (expression -> msg == "Const Declaration")
+            {
+                int const_value = atoi(expression -> name.c_str());
+                int temp_index = this -> checkConst(const_value);
+                VarPair const_output;
+                if(temp_index == -1)
+                {
+                    this -> addConst(const_value, temp_count);
+                    const_output = VarPair(TEMP, temp_count++);
+                    VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                    (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, const_output));
+                }
+                else
+                    const_output = VarPair(TEMP, temp_index);
+                (this -> list).push_back(InterCode(OP_RETURN, const_output));
+            }
+            else
+            {
+                VarPair outputer = VarPair(TEMP, temp_count++);
+                this -> arithmetic(expression, vlist, outputer); 
+                if(expression -> msg == "Expr")
+                    outputer.usage = CONTENT;
+                (this -> list).push_back(InterCode(OP_RETURN, outputer));
+            }
+        }
+        else
+        {
+            printf("Jump Statement: error: there shouldn't be other possibilities\n");
+            //error: there shouldn't be other possibilities
         }
     }
     else if (root -> msg == "Repeat Statement")
@@ -1406,7 +1824,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             VarPair loop_leave = VarPair(LABEL, label_count++);
             VarPair loop_continue = VarPair(LABEL, label_count++);
             (this -> list).push_back(InterCode(OP_LABEL, loop_start));
-            this -> makeConditions(condition, loop_continue, loop_leave, true);
+            this -> makeConditions(condition, loop_continue, loop_leave, 0, vlist);
             (this -> list).push_back(InterCode(OP_LABEL, loop_continue));
             this -> read(order, vlist, loop_leave, loop_start);
             (this -> list).push_back(InterCode(GOTO, loop_start));
@@ -1423,7 +1841,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             VarPair loop_leave = VarPair(LABEL, label_count++);
             VarPair loop_continue = VarPair(LABEL, label_count++);
             (this -> list).push_back(InterCode(OP_LABEL, loop_start));
-            this -> makeConditions(condition, loop_continue, loop_leave, true);
+            this -> makeConditions(condition, loop_continue, loop_leave, 0, vlist);
             (this -> list).push_back(InterCode(OP_LABEL, loop_continue));
             this -> read(order, vlist, loop_leave, loop_start);
             this -> read(after_each_loop, vlist, break_label, continue_label);
@@ -1445,7 +1863,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
         {
             VarPair success = VarPair(LABEL, label_count++);
             VarPair failure = VarPair(LABEL, label_count++);
-            this -> makeConditions(condition, success, failure, true);
+            this -> makeConditions(condition, success, failure, 0, vlist);
             (this -> list).push_back(InterCode(OP_LABEL, success));
             this -> read(order, vlist, break_label, continue_label);
             (this -> list).push_back(InterCode(OP_LABEL, failure));
@@ -1455,7 +1873,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             ASTNode* order_if_failure = (*children)[2];
             VarPair success = VarPair(LABEL, label_count++);
             VarPair failure = VarPair(LABEL, label_count++);
-            this -> makeConditions(condition, success, failure, true);
+            this -> makeConditions(condition, success, failure, 0, vlist);
             (this -> list).push_back(InterCode(OP_LABEL, success));
             this -> read(order, vlist, break_label, continue_label);
             (this -> list).push_back(InterCode(OP_LABEL, failure));

@@ -127,7 +127,7 @@ private:
     std::unordered_map<int, int> constant_pool;
     void classify();
     void arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_result);
-    void makeConditions(ASTNode* condition, VarPair success, VarPair failure, bool codetype);
+    void makeConditions(ASTNode* condition, VarPair success, VarPair failure, int codetype, Varlistnode* vlist);
     void addConst(int value, int index);
     int checkConst(int value);
     void read(ASTNode* root, Varlistnode* vlist, VarPair break_label, VarPair continue_label);
