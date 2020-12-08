@@ -538,6 +538,12 @@ void InterCodeList::classify()
 
 void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_result)
 {
+    if (root -> msg == "ID Declaration" || root -> msg == "Const Declaration")
+    {
+        printf("Function arithmetic: error: unexpected message\n");
+        exit(-1);
+        // error: unexpected message
+    }
     ASTNode* left = (*(root->getChildren()))[0];
     ASTNode* right = (*(root->getChildren()))[1];
     VarPair left_value;
@@ -986,10 +992,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         (this -> list).push_back(InterCode(right_value, width, DOP_MULTIPLY, raddress));
         (this -> list).push_back(InterCode(left_value, raddress, op, temp_result));
     }
-    // else if (root -> msg == "other")
-    // {
-
-    // }
     else
     {
         printf("arithmetic: error: there shouldn't be other possibilities\n");
@@ -1439,9 +1441,17 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 }
                 else if ((*iter) -> msg == "Arr Declaration")
                 {
-                    VarPair arr = VarPair(ARR, arr_count++, (*iter) -> name);
+                    ASTNode* arrname_node = (*((*iter) -> getChildren()))[0];
+                    if (arrname_node -> msg != "Var Declaration")
+                    {
+                        printf("%s\n", (arrname_node -> name).c_str());
+                        printf("error: cannot lead '[]'\n");
+                        exit(-1);
+                        // error: cannot lead '[]'
+                    }
+                    VarPair arr = VarPair(ARR, arr_count++, arrname_node -> name);
                     vlist -> addVar(arr);
-                    ASTNode* info = (*((*iter) -> getChildren()))[1];
+                    ASTNode* space_node = (*((*iter) -> getChildren()))[1];
                     VarPair size_temp;
                     int temp_index = this -> checkConst(INT_SIZE);
                     if (temp_index == -1)
@@ -1453,18 +1463,26 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                     }
                     else
                         size_temp = VarPair(TEMP, temp_index);
-                    int const_value = atoi((info -> name).c_str());
                     VarPair width_temp;
-                    temp_index = this -> checkConst(const_value);
-                    if (temp_index == -1)
+                    if (space_node -> msg == "Const Declaration")
                     {
-                        VarPair width = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
-                        this -> addConst(const_value, temp_count);
-                        width_temp = VarPair(TEMP, temp_count++);
-                        (this -> list).push_back(InterCode(width, DOP_ASSIGNMENT, width_temp));
+                        int const_value = atoi((space_node -> name).c_str());
+                        temp_index = this -> checkConst(const_value);
+                        if (temp_index == -1)
+                        {
+                            VarPair width = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                            this -> addConst(const_value, temp_count);
+                            width_temp = VarPair(TEMP, temp_count++);
+                            (this -> list).push_back(InterCode(width, DOP_ASSIGNMENT, width_temp));
+                        }
+                        else
+                            width_temp = VarPair(TEMP, temp_index);
                     }
                     else
-                        width_temp = VarPair(TEMP, temp_index);
+                    {
+                        width_temp = VarPair(TEMP, temp_count++);
+                        this -> arithmetic(space_node, vlist, width_temp);
+                    }
                     VarPair space = VarPair(TEMP, temp_count++);
                     (this -> list).push_back(InterCode(width_temp, size_temp, DOP_MULTIPLY, space));
                     (this -> list).push_back(InterCode(space, ARRAY_DECLARATION, arr));
@@ -1523,7 +1541,108 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                     }
                     else if(var -> msg == "Arr Declaration")
                     {
-
+                        ASTNode* arrname_node = (*(var -> getChildren()))[0];
+                        if (arrname_node -> msg != "Var Declaration")
+                        {
+                            printf("%s\n", (arrname_node -> name).c_str());
+                            printf("error: cannot lead '[]'\n");
+                            exit(-1);
+                            // error: cannot lead '[]'
+                        }
+                        VarPair arr = VarPair(ARR, arr_count++, arrname_node -> name);
+                        vlist -> addVar(arr);
+                        ASTNode* space_node = (*(var -> getChildren()))[1];
+                        VarPair size_temp;
+                        int temp_index = this -> checkConst(INT_SIZE);
+                        if (temp_index == -1)
+                        {
+                            VarPair size = VarPair(ARGTYPE::ARG_CONSTANT, INT_SIZE);
+                            this -> addConst(INT_SIZE, temp_count);
+                            size_temp = VarPair(TEMP, temp_count++);
+                            (this -> list).push_back(InterCode(size, DOP_ASSIGNMENT, size_temp));
+                        }
+                        else
+                            size_temp = VarPair(TEMP, temp_index);
+                        VarPair width_temp;
+                        if (space_node -> msg == "Const Declaration")
+                        {
+                            int const_value = atoi((space_node -> name).c_str());
+                            temp_index = this -> checkConst(const_value);
+                            if (temp_index == -1)
+                            {
+                                VarPair width = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                                this -> addConst(const_value, temp_count);
+                                width_temp = VarPair(TEMP, temp_count++);
+                                (this -> list).push_back(InterCode(width, DOP_ASSIGNMENT, width_temp));
+                            }
+                            else
+                                width_temp = VarPair(TEMP, temp_index);
+                        }
+                        else
+                        {
+                            width_temp = VarPair(TEMP, temp_count++);
+                            this -> arithmetic(space_node, vlist, width_temp);
+                        }
+                        VarPair space = VarPair(TEMP, temp_count++);
+                        (this -> list).push_back(InterCode(width_temp, size_temp, DOP_MULTIPLY, space));
+                        (this -> list).push_back(InterCode(space, ARRAY_DECLARATION, arr));
+                        // above: space distribution to array.
+                        if (value -> msg != "Initializer List")
+                        {
+                            printf("error: invalid initializer\n");
+                            exit(-1);
+                            // error: invalid initializer
+                        }
+                        VarPair array_initializer = VarPair(TEMP, temp_count++);
+                        VarPair address_stalker = VarPair(TEMP, temp_count++);
+                        VarPair mediate = VarPair(TEMP, temp_count++);
+                        // VarPair zero = VarPair(ARGTYPE::ARG_CONSTANT, 0);
+                        arr.usage = ADDRESS;
+                        (this -> list).push_back(InterCode(arr, DOP_ASSIGNMENT, address_stalker));
+                        for (auto iter1 = value -> getChildren() -> begin(); iter1 != value -> getChildren() -> end(); iter1++)
+                        {
+                            if ((*iter1) -> msg == "Const Declaration")
+                            {
+                                VarPair value_vp;
+                                int constant_value = atoi(((*iter1) -> name).c_str());
+                                int const_temp_index = this -> checkConst(constant_value);
+                                if (const_temp_index == -1)
+                                {
+                                    VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, constant_value);
+                                    this -> addConst(constant_value, temp_count);
+                                    value_vp = VarPair(TEMP, temp_count++);
+                                    (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, value_vp));
+                                }
+                                else
+                                    value_vp = VarPair(TEMP, const_temp_index);
+                                (this -> list).push_back(InterCode(value_vp, DOP_ASSIGNMENT, array_initializer));
+                            }
+                            else if ((*iter1) -> msg == "ID Declaration")
+                            {
+                                VarPair id_vp = vlist -> findVar((*iter1) -> name);
+                                if (id_vp.type == NULL_ARG)
+                                {
+                                    printf("%s\n", ((*iter1) -> name).c_str());
+                                    printf("error: var not defined.\n");
+                                    exit(-1);
+                                    // error: variable undefined
+                                }
+                                else
+                                    (this -> list).push_back(InterCode(id_vp, DOP_ASSIGNMENT, array_initializer));
+                            }
+                            else
+                            {
+                                this -> arithmetic(*iter1, vlist, array_initializer);
+                            }
+                            address_stalker.usage = CONTENT;
+                            (this -> list).push_back(InterCode(array_initializer, DOP_ASSIGNMENT, address_stalker));
+                            if (iter1 != value -> getChildren() -> end() - 1)
+                            {
+                                address_stalker.usage = ORIGIN;
+                                (this -> list).push_back(InterCode(address_stalker, size_temp, DOP_ADD, mediate));
+                                (this -> list).push_back(InterCode(mediate, DOP_ASSIGNMENT, address_stalker));
+                            }
+                        }
                         // to be completed
                     }
                 }
