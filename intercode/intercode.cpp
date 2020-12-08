@@ -1311,6 +1311,37 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
         if (codetype == 0)
             (this -> list).push_back(InterCode(GOTO, failure));
     }
+    else if (condition -> msg == "Additive Expression" || condition -> msg == "Multiplicative Expression" 
+    || condition -> msg == "Pow Expression" || condition -> msg == "Expr")
+    {
+        VarPair value = VarPair(TEMP, temp_count++);
+        this -> arithmetic(condition, vlist, value);
+        if (condition -> msg == "Expr")
+            value.usage = CONTENT;
+        VarPair zero_temp;
+        int temp_index = this -> checkConst(0);
+        if(temp_index == -1)
+        {
+            this -> addConst(0, temp_count);
+            zero_temp = VarPair(TEMP, temp_count++);
+            VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, 0);
+            (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, zero_temp));
+        }
+        else
+            zero_temp = VarPair(TEMP, temp_index);
+        if (codetype != 2)
+            (this -> list).push_back(InterCode(value, zero_temp, JUMP_UNEQUAL, success));
+        else
+            (this -> list).push_back(InterCode(value, zero_temp, FJUMP_UNEQUAL, failure));
+        if (codetype == 0)
+            (this -> list).push_back(InterCode(GOTO, failure));
+    }
+    else
+    {
+        printf("Function makeConditions: error: there shouldn't be other possibilities\n");
+        exit(-1);
+        // error: error: there shouldn't be other possibilities
+    }
 };
 
 void InterCodeList::addConst(int value, int index)
@@ -1784,7 +1815,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
     else if (root -> msg == "Input Expression")
     {
         std::vector<ASTNode*>* children = root -> getChildren();
-        // printf("1\n");
+        VarPair temp_cin = VarPair(TEMP, temp_count++);
         for (auto iter = children -> begin(); iter != children -> end(); iter++)
         {
             if ((*iter) -> msg == "ID Declaration")
@@ -1799,7 +1830,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 }
                 else
                 {
-                    (this -> list).push_back(InterCode(OP_READ, var));
+                    (this -> list).push_back(InterCode(OP_READ, temp_cin));
+                    (this -> list).push_back(InterCode(temp_cin, DOP_ASSIGNMENT, var));
                 }
             }
             else if ((*iter) -> msg == "Expr")
@@ -1878,7 +1910,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 (this -> list).push_back(InterCode(idxtemp, width, DOP_MULTIPLY, raddress));
                 (this -> list).push_back(InterCode(arrpair, raddress, DOP_GETVALUE, left_value));
                 left_value.usage = CONTENT;
-                (this -> list).push_back(InterCode(OP_READ, left_value));
+                (this -> list).push_back(InterCode(OP_READ, temp_cin));
+                (this -> list).push_back(InterCode(temp_cin, DOP_ASSIGNMENT, left_value));
             }
             else
             {

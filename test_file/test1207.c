@@ -5,8 +5,20 @@
 // }
 
 int main() {
-    int a = 1;
-    int b[2] = {a, a};
+    int n;
+    cin >> n;
+    int i;
+    for (i = 1; i <= n; i = i + 1)
+    {
+        if (i % 2)
+        {
+            cout << 1;
+        }
+        else
+        {
+            cout << -1;
+        }
+    }
     // cin >> a >> b;
     // a || (b = c);
     // if (a >= b || a < b && a == b) {
