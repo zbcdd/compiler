@@ -1,4 +1,6 @@
 #include "intercode.h"
+#include <fstream>
+
 #define INT_SIZE 4
 
 
@@ -2114,9 +2116,12 @@ void InterCodeList::read(ASTNode* root)
 
 void InterCodeList::printCodeList()
 {
+    // FILE* file = fopen("./intercode/intercode.txt", "w");
     printf("print intercode list:\n");
     for (auto iter = (this -> list).begin(); iter != (this -> list).end(); iter ++)
-    {    
-        printf("%s", (*iter).printCode().c_str());
+    {
+        std::string intercode_item = (*iter).printCode();
+        printf("%s", intercode_item.c_str());
+        // fprintf(file, "%s", intercode_item.c_str());
     }
 };

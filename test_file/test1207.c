@@ -4,9 +4,11 @@
 // }
 
 int main() {
-    int a, b, c;
+    int a, b, c, z;
+    z = a + b;
+    z = z + c;
     // cin >> a >> b;
-    a || (b = c);
+    // a || (b = c);
     // if (a >= b || a < b && a == b) {
     //     cout << a;
     // }
@@ -19,5 +21,5 @@ int main() {
     //     cout << c;
     // }
     
-    return a * c;
+    return c;
 }
