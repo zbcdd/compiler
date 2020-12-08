@@ -1,3 +1,4 @@
+#include <stdio.h>
 // int func() {
 //     int a = 3;
 //     return a + b;
@@ -5,7 +6,7 @@
 
 int main() {
     int a = 1;
-    int b = 2;
+    int b[4] = {a, a};
     // cin >> a >> b;
     // a || (b = c);
     // if (a >= b || a < b && a == b) {
@@ -19,5 +20,6 @@ int main() {
     // {
     //     cout << c;
     // }
-    return a % b;
+    printf("%d\n", b[1]);
+    return 0;
 }

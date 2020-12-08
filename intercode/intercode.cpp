@@ -23,12 +23,14 @@ VarPair::VarPair(ARGTYPE type, int index)
 {
     this -> type = type;
     this -> index = index;
+    this -> name = "";
     this -> usage = ORIGIN;
 };
 
 VarPair::VarPair(ARGTYPE type, std::string name)
 {
     this -> type = type;
+    this -> index = -1;
     this -> name = name;
     this -> usage = ORIGIN;
 };
@@ -108,10 +110,8 @@ std::string InterCode::toString(VarPair arg)
             break;
         }
     }
-    // printf("%d", arg.index);
     p3 = itos(arg.index);
     std::string ss = p1 + p2 + p3;
-    // printf("(%s, %s, %s)\n", p1.c_str(), p2.c_str(), p3.c_str());
     return ss;
 };
 
@@ -1595,15 +1595,10 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                                 (this -> list).push_back(InterCode(mediate, DOP_ASSIGNMENT, address_stalker));
                             }
                         }
-                        // to be completed
                     }
                 }
             }
         }
-        // else if( )           // to be completed
-        // {
-
-        // }
     }
     else if (root -> msg == "Assignment Expression")
     {
@@ -1777,8 +1772,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             printf("can't be a left value\n");
             exit(-1);
             // error: xxx can't be a left value
-        }
-        
+        }   
     }
     else if (root -> msg == "Additive Expression" || root -> msg == "Multiplicative Expression" 
     || root -> msg == "Pow Expression" || root -> msg == "Logical OR Expression" 
@@ -2104,17 +2098,17 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
 void InterCodeList::label_recycle()
 {
     bool* label_used = new bool[this -> label_count];
-    for (int i = 0; i < this -> label_count; i++)
-        label_used[i] = false;
-    for (auto iter = (this -> list).begin(); iter != (this -> list).end(); iter++)
-        if ((*iter).getResult().type == LABEL && (*iter).getOperator() != OP_LABEL)
-        {
-            int label_index = (*iter).getResult().index;
-            label_used[label_index] = true;
-        }
     for(int i = 0; i < this -> label_count; i++)
     {
         int recycle_count = 0;
+        for (int i = 0; i < this -> label_count; i++)
+            label_used[i] = false;
+        for (auto iter = (this -> list).begin(); iter != (this -> list).end(); iter++)
+            if ((*iter).getResult().type == LABEL && (*iter).getOperator() != OP_LABEL)
+            {
+                int label_index = (*iter).getResult().index;
+                label_used[label_index] = true;
+            }
         for (auto iter = (this -> list).begin(); iter != (this -> list).end();)
             if ((*iter).getOperator() == OP_LABEL && label_used[(*iter).getResult().index] == false)
             {
