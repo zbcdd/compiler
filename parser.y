@@ -474,6 +474,8 @@ direct_declarator
         for (int i = 0; i < children -> size(); i ++) {
             st.push_back((*children)[i]);
         }
+        if (children -> size() == 0 && $3 -> msg != "Const Declaration")
+            yyerror("数组静态初始化不能使用标识符");
         while (st.size()) {
             ASTNode* topNode = st.back();
             st.pop_back();
