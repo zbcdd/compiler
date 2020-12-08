@@ -30,7 +30,7 @@ enum OPTYPE
     NULL_TYPE = 0,      // null
     DOP_ADD,            // +
     DOP_MINUS,          // -
-    DOP_MULIPLY,        // *
+    DOP_MULTIPLY,        // *
     DOP_DIVIDE,         // /
     DOP_MOD,            // %
     DOP_POW,            // ^
@@ -132,6 +132,7 @@ private:
     std::unordered_map<int, int> constant_pool;
     void classify();
     void arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_result);
+    void fake_arithmetic(ASTNode* root, Varlistnode* vlist);
     void makeConditions(ASTNode* condition, VarPair success, VarPair failure, int codetype, Varlistnode* vlist);
     void addConst(int value, int index);
     int checkConst(int value);

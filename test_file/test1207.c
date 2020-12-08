@@ -5,18 +5,19 @@
 
 int main() {
     int a, b, c;
-    cin >> a >> b;
-    if (a >= b || a < b && a == b) {
-        cout << a;
-    }
-    else if (a != b)
-    {
-        cout << b;
-    }
-    else
-    {
-        cout << c;
-    }
+    // cin >> a >> b;
+    a || (b = c);
+    // if (a >= b || a < b && a == b) {
+    //     cout << a;
+    // }
+    // else if (a != b)
+    // {
+    //     cout << b;
+    // }
+    // else
+    // {
+    //     cout << c;
+    // }
     
-    return 0;
+    return a * c;
 }

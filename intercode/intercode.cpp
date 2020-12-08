@@ -242,7 +242,7 @@ std::string InterCode::printCode()
             code += "\n";
             break;
         }
-        case DOP_MULIPLY:
+        case DOP_MULTIPLY:
         {
             code += toString(this -> result);
             code += " := ";
@@ -550,12 +550,14 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", left -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else if (left_value.type == ARR)
             {
                 printf("\"%s\": Type \"ARR\"\n", left -> name.c_str());
                 printf("error: can't be a left value\n");
+                exit(-1);
                 // error: can't be a left value
             }
             else
@@ -566,6 +568,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         else if (left -> msg == "Const Declaration")
         {
             printf("error: a constant value can't be a left value\n");
+            exit(-1);
             // error: a constant value can't be a left value
         }
         else
@@ -580,6 +583,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", right -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else
@@ -617,12 +621,14 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", left -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else if (left_value.type == ARR)
             {
                 printf("\"%s\": Type \"ARR\"\n", left -> name.c_str());
                 printf("error: can't be a left value\n");
+                exit(-1);
                 // error: can't be a left value
             }
             else
@@ -656,6 +662,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", right -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else
@@ -696,12 +703,14 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", left -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else if (left_value.type == ARR)
             {
                 printf("\"%s\": Type \"ARR\"\n", left -> name.c_str());
                 printf("error: can't be a left value\n");
+                exit(-1);
                 // error: can't be a left value
             }
             else
@@ -735,6 +744,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", right -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else
@@ -762,12 +772,28 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             this -> arithmetic(right, vlist, right_value);
         }
         if (root -> name == "arithmetic_op:*")
-            op = DOP_MULIPLY;
+            op = DOP_MULTIPLY;
         else if (root -> name == "arithmetic_op:/")
             op = DOP_DIVIDE;
-        else
+        else if (root -> name == "arithmetic_op:%")
+        {
             op = DOP_MOD;
-        
+            // if (left -> msg == "Expr")
+            //     left_value.usage = CONTENT;
+            // if (right -> msg == "Expr")
+            //     right_value.usage = CONTENT;
+            // VarPair proccess1 = VarPair(TEMP, temp_count++);
+            // VarPair proccess2 = VarPair(TEMP, temp_count++);
+            // (this -> list).push_back(InterCode(left_value, right_value, DOP_DIVIDE, proccess1));
+            // (this -> list).push_back(InterCode(proccess1, right_value, DOP_MULTIPLY, proccess2));
+            // (this -> list).push_back(InterCode(left_value, proccess2, DOP_MINUS, temp_result));
+        }
+        else
+        {
+            printf("Multiplicative Expression: error: there shouldn't be other possibilities\n");
+            exit(-1);
+            // error: there shouldn't be other possibilities
+        }
     }
     else if (root -> msg == "Pow Expression")
     {
@@ -778,12 +804,14 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", left -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else if (left_value.type == ARR)
             {
                 printf("\"%s\": Type \"ARR\"\n", left -> name.c_str());
                 printf("error: can't be a left value\n");
+                exit(-1);
                 // error: can't be a left value
             }
             else
@@ -817,6 +845,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", right -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else
@@ -844,7 +873,43 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             this -> arithmetic(right, vlist, right_value);
         }
         op = DOP_POW;
-        // to be completed
+        if (left -> msg == "Expr")
+            left_value.usage = CONTENT;
+        if (right -> msg == "Expr")
+            right_value.usage = CONTENT;
+        VarPair if_true = VarPair(LABEL, label_count++);
+        VarPair loop_start = VarPair(LABEL, label_count++);
+        VarPair loop_leave = VarPair(LABEL, label_count++);
+        VarPair constant_zero = VarPair(ARGTYPE::ARG_CONSTANT, 0);
+        VarPair counter = VarPair(TEMP, temp_count++);
+        (this -> list).push_back(InterCode(constant_zero, DOP_ASSIGNMENT, counter));
+        (this -> list).push_back(InterCode(right_value, counter, FJUMP_S, if_true));
+        (this -> list).push_back(InterCode(constant_zero, DOP_ASSIGNMENT, temp_result));
+        (this -> list).push_back(InterCode(GOTO, loop_leave));
+        (this -> list).push_back(InterCode(OP_LABEL, if_true));
+        VarPair proccess1 = VarPair(TEMP, temp_count++);
+        VarPair counter_inter = VarPair(TEMP, temp_count++);
+        VarPair constant_one;
+        int temp_index = this -> checkConst(1);
+        if(temp_index == -1)
+        {
+            this -> addConst(1, temp_count);
+            constant_one = VarPair(TEMP, temp_count++);
+            VarPair one = VarPair(ARGTYPE::ARG_CONSTANT, 1);
+            (this -> list).push_back(InterCode(one, DOP_ASSIGNMENT, constant_one));
+        }
+        else
+            constant_one = VarPair(TEMP, temp_index);
+        (this -> list).push_back(InterCode(constant_one, DOP_ASSIGNMENT, proccess1));
+        (this -> list).push_back(InterCode(constant_one, DOP_ASSIGNMENT, temp_result));
+        (this -> list).push_back(InterCode(OP_LABEL, loop_start));
+        (this -> list).push_back(InterCode(counter, right_value, FJUMP_S, loop_leave));
+        (this -> list).push_back(InterCode(proccess1, left_value, DOP_MULTIPLY, temp_result));
+        (this -> list).push_back(InterCode(temp_result, DOP_ASSIGNMENT, proccess1));
+        (this -> list).push_back(InterCode(counter, constant_one, DOP_ADD, counter_inter));
+        (this -> list).push_back(InterCode(counter_inter, DOP_ASSIGNMENT, counter));
+        (this -> list).push_back(InterCode(GOTO, loop_start));
+        (this -> list).push_back(InterCode(OP_LABEL, loop_leave));
     }
     else if (root -> msg == "Expr")
     { 
@@ -855,6 +920,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", left -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else
@@ -865,6 +931,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         else
         {
             printf("not a correct type with \"[]\"\n");
+            exit(-1);
             // error: not a correct type with "[]"
         }
         if (right -> msg == "ID Declaration")
@@ -874,6 +941,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
             {
                 printf("%s\n", right -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else
@@ -913,7 +981,7 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         else
             width = VarPair(TEMP, temp_index);
         VarPair raddress = VarPair(TEMP, temp_count++);
-        (this -> list).push_back(InterCode(right_value, width, DOP_MULIPLY, raddress));
+        (this -> list).push_back(InterCode(right_value, width, DOP_MULTIPLY, raddress));
         (this -> list).push_back(InterCode(left_value, raddress, op, temp_result));
     }
     // else if (root -> msg == "other")
@@ -922,14 +990,30 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
     // }
     else
     {
-        // error: xxx can't be a right value
+        printf("arithmetic: error: there shouldn't be other possibilities\n");
+        exit(-1);
+        // error: there shouldn't be other possibilities
     }
     if (left -> msg == "Expr")
         left_value.usage = CONTENT;
     if (right -> msg == "Expr")
         right_value.usage = CONTENT;
-    if (root -> msg != "Expr")
+    if (root -> msg != "Expr" && root -> msg != "Pow Expression")
         (this -> list).push_back(InterCode(left_value, right_value, op, temp_result));
+};
+
+void InterCodeList::fake_arithmetic(ASTNode* root, Varlistnode* vlist)
+{
+    if (root -> msg == "Assignment Expression")
+    {
+        this -> read(root, vlist, VarPair(), VarPair());
+    }
+    else
+    {
+        std::vector<ASTNode*>* children = root -> getChildren(); 
+        for (auto iter = children -> begin(); iter != children -> end(); iter++)
+            fake_arithmetic(*iter, vlist);
+    }
 };
 
 void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair failure, int codetype, Varlistnode* vlist)
@@ -991,7 +1075,8 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
             {
                 printf("%s\n", left -> name.c_str());
                 printf("error: variable undefined\n");
-                //error: variable undefined
+                exit(-1);
+                // error: variable undefined
             }
             else
             {
@@ -1024,7 +1109,8 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
             {
                 printf("%s\n", right -> name.c_str());
                 printf("error: variable undefined\n");
-                //error: variable undefined
+                exit(-1);
+                // error: variable undefined
             }
             else
             {
@@ -1067,6 +1153,7 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
         else
         {
             printf("Equality Expression: error: there shouldn't be other possibilities\n");
+            exit(-1);
             // error: there shouldn't be other possibilities
         }
         if (codetype != 2)
@@ -1090,7 +1177,8 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
             {
                 printf("%s\n", left -> name.c_str());
                 printf("error: variable undefined\n");
-                //error: variable undefined
+                exit(-1);
+                // error: variable undefined
             }
             else
             {
@@ -1123,7 +1211,8 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
             {
                 printf("%s\n", right -> name.c_str());
                 printf("error: variable undefined\n");
-                //error: variable undefined
+                exit(-1);
+                // error: variable undefined
             }
             else
             {
@@ -1180,6 +1269,7 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
         else
         {
             printf("Relational Expression: error: there shouldn't be other possibilities\n");
+            exit(-1);
             // error: there shouldn't be other possibilities
         }
         if (left -> msg == "Expr")
@@ -1204,7 +1294,8 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
         {
             printf("%s\n", condition -> name.c_str());
             printf("error: variable undefined\n");
-            //error: variable undefined
+            exit(-1);
+            // error: variable undefined
         }
         else
         {
@@ -1373,7 +1464,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                     else
                         width_temp = VarPair(TEMP, temp_index);
                     VarPair space = VarPair(TEMP, temp_count++);
-                    (this -> list).push_back(InterCode(width_temp, size_temp, DOP_MULIPLY, space));
+                    (this -> list).push_back(InterCode(width_temp, size_temp, DOP_MULTIPLY, space));
                     (this -> list).push_back(InterCode(space, ARRAY_DECLARATION, arr));
                 }
                 else if ((*iter) -> msg == "Initializer")
@@ -1407,6 +1498,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                             {
                                 printf("%s\n", (value -> name).c_str());
                                 printf("error: var not defined.\n");
+                                exit(-1);
                                 // error: variable undefined
                             }
                             else
@@ -1423,6 +1515,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                             VarPair variable = VarPair(VAR, var_count++, var -> name);
                             vlist -> addVar(variable);
                             (this -> list).push_back(InterCode(temp_result, DOP_ASSIGNMENT, variable));
+                            exit(-1);
                             // error: fatal assignment
                         }
                     }
@@ -1450,12 +1543,14 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             {
                 printf("%s\n", left -> name.c_str());
                 printf("error: variable undefined\n");
+                exit(-1);
                 // error: variable undefined
             }
             else if (var.type == ARR)
             {
                 printf("\"%s\": Type \"ARR\"\n", left -> name.c_str());
                 printf("error: can't be a left value\n");
+                exit(-1);
                 // error: can't be a left value
             }
             else if (right -> msg == "ID Declaration")
@@ -1465,6 +1560,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 {
                     printf("%s\n", right -> name.c_str());
                     printf("error: variable undefined\n");
+                    exit(-1);
                     // error: variable undefined
                 }
                 (this -> list).push_back(InterCode(right_var, DOP_ASSIGNMENT, var));
@@ -1506,6 +1602,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 {
                     printf("%s\n", arrname -> name.c_str());
                     printf("error: variable undefined\n");
+                    exit(-1);
                     // error: variable undefined
                 }
                 else if (arrpair.type != ARR)
@@ -1521,6 +1618,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             else
             {
                 printf("not a correct type with \"[]\"\n");
+                exit(-1);
                 // error: not a correct type with "[]"
             }
             if (targetidx -> msg == "ID Declaration")
@@ -1530,6 +1628,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 {
                     printf("%s\n", targetidx -> name.c_str());
                     printf("error: variable undefined\n");
+                    exit(-1);
                     // error: variable undefined
                 }
                 else
@@ -1564,6 +1663,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 {
                     printf("%s\n", right -> name.c_str());
                     printf("error: variable undefined\n");
+                    exit(-1);
                     // error: variable undefined
                 }
             }
@@ -1599,7 +1699,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 width = VarPair(TEMP, temp_index);
             VarPair raddress = VarPair(TEMP, temp_count++);
             VarPair left_value = VarPair(TEMP, temp_count++);
-            (this -> list).push_back(InterCode(idxtemp, width, DOP_MULIPLY, raddress));
+            (this -> list).push_back(InterCode(idxtemp, width, DOP_MULTIPLY, raddress));
             (this -> list).push_back(InterCode(arrpair, raddress, DOP_GETVALUE, left_value));
             left_value.usage = CONTENT;
             if (right -> msg == "Expr")
@@ -1610,9 +1710,17 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
         {
             printf("error:%s ", left -> name.c_str());
             printf("can't be a left value\n");
+            exit(-1);
             // error: xxx can't be a left value
         }
         
+    }
+    else if (root -> msg == "Additive Expression" || root -> msg == "Multiplicative Expression" 
+    || root -> msg == "Pow Expression" || root -> msg == "Logical OR Expression" 
+    || root -> msg == "Logical AND Expression" || root -> msg == "Logical not expression" 
+    || root -> msg == "Equality Expression" || root -> msg == "Relational Expression")
+    {
+        this -> fake_arithmetic(root, vlist);
     }
     else if (root -> msg == "Input Expression")
     {
@@ -1627,6 +1735,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 {
                     printf("%s\n", (*iter) -> name.c_str());
                     printf("error: variable undefined\n");
+                    exit(-1);
                     // error: variable undefined
                 }
                 else
@@ -1647,12 +1756,15 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                     {
                         printf("%s\n", arrname -> name.c_str());
                         printf("error: variable undefined\n");
+                        exit(-1);
                         // error: variable undefined
                     }
                     else if (arrpair.type != ARR)
                     {
                         printf("%s\n", arrname -> name.c_str());
                         printf("error: is not an array\n");
+                        exit(-1);
+                        // error: xxx is not an array
                     }
                     else
                     {
@@ -1662,6 +1774,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 else
                 {
                     printf("not a correct type with \"[]\"\n");
+                    exit(-1);
                     // error: not a correct type with "[]"
                 }
                 if (targetidx -> msg == "ID Declaration")
@@ -1671,6 +1784,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                     {
                         printf("%s\n", targetidx -> name.c_str());
                         printf("error: variable undefined\n");
+                        exit(-1);
                         // error: variable undefined
                     }
                     else
@@ -1710,7 +1824,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                     width = VarPair(TEMP, temp_index);
                 VarPair raddress = VarPair(TEMP, temp_count++);
                 VarPair left_value = VarPair(TEMP, temp_count++);
-                (this -> list).push_back(InterCode(idxtemp, width, DOP_MULIPLY, raddress));
+                (this -> list).push_back(InterCode(idxtemp, width, DOP_MULTIPLY, raddress));
                 (this -> list).push_back(InterCode(arrpair, raddress, DOP_GETVALUE, left_value));
                 left_value.usage = CONTENT;
                 (this -> list).push_back(InterCode(OP_READ, left_value));
@@ -1718,6 +1832,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             else
             {
                 printf("error: not an expression that can be inputted.\n");
+                exit(-1);
                 // error: not an expression that can be inputted.
             }
         }
@@ -1734,6 +1849,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 {
                     printf("%s\n", (*iter) -> name.c_str());
                     printf("error: variable undefined\n");
+                    exit(-1);
                     // error: variable undefined
                 }
                 else
@@ -1779,7 +1895,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             else
             {
                 printf("error: 'break' cannot be used outside a loop\n");
-                //error: 'break' cannot be used outside a loop
+                exit(-1);
+                // error: 'break' cannot be used outside a loop
             }
         }
         else if (root -> name == "continue")
@@ -1789,7 +1906,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             else
             {
                 printf("error: 'continue' cannot be used outside a loop\n");
-                //error: 'continue' cannot be used outside a loop
+                exit(-1);
+                // error: 'continue' cannot be used outside a loop
             }
         }
         else if (root -> name == "return expr")
@@ -1802,6 +1920,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                 {
                     printf("%s\n", expression -> name.c_str());
                     printf("error: variable undefined\n");
+                    exit(-1);
                     // error: variable undefined
                 }
                 else
@@ -1837,7 +1956,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
         else
         {
             printf("Jump Statement: error: there shouldn't be other possibilities\n");
-            //error: there shouldn't be other possibilities
+            exit(-1);
+            // error: there shouldn't be other possibilities
         }
     }
     else if (root -> msg == "Repeat Statement")
@@ -1877,7 +1997,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
         else
         {
             printf("Repeat Statement: there shouldn't be other possibilities.\n");
-            //error: there shouldn't be other possibilities.
+            exit(-1);
+            // error: there shouldn't be other possibilities.
         }
     }
     else if (root -> msg == "Selection Statement")
@@ -1911,7 +2032,8 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
         else
         {
             printf("Selection Statement: there shouldn't be other possibilities.\n");
-            //error: there shouldn't be other possibilities.
+            exit(-1);
+            // error: there shouldn't be other possibilities.
         }
     }
     else if (root -> msg == "Empty Statement")
