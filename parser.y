@@ -533,7 +533,22 @@ initializer
 	: assignment_expression {
         $$ = $1;
     }
-	| '{' initializer_list '}'{
+	| '{' initializer_list '}' {
+        std::vector<ASTNode*>* children = $2 -> getChildren();
+        std::vector<ASTNode*> st;
+        for (int i = 0; i < children -> size(); i ++) {
+            st.push_back((*children)[i]);
+        }
+        while (st.size()) {
+            ASTNode* topNode = st.back();
+            st.pop_back();
+            std::vector<ASTNode*>* cur_children = topNode -> getChildren();
+            for (int i = 0; i < cur_children -> size(); i ++) {
+                st.push_back((*cur_children)[i]);
+            }
+            if (cur_children -> size() == 0 && topNode -> msg != "Const Declaration")
+            yyerror("初始化列表里面不能有标识符");
+        }
         $$ = $2;
     }
 	;
