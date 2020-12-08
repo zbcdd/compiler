@@ -2134,7 +2134,7 @@ void InterCodeList::label_recycle()
                 int index_this = (*iter).getResult().index;
                 int index_next = (*(iter + 1)).getResult().index;
                 for (auto iter1 = (this -> list).begin();  iter1 != (this -> list).end(); iter1++)
-                    if ((*iter1).getOperator() == GOTO && (*iter1).getResult().index == index_this)
+                    if ((*iter1).getResult().type == LABEL && (*iter1).getResult().index == index_this)
                         (*iter1).setResult(VarPair(LABEL, index_next));
                 iter = (this -> list).erase(iter);
                 recycle_count++;
