@@ -1,8 +1,6 @@
 #include "intercode.h"
-#include <fstream>
 
 #define INT_SIZE 4
-
 
 std::string itos(int n)
 {
@@ -264,6 +262,16 @@ std::string InterCode::printCode()
             code += "\n";
             break;
         }
+        case DOP_MOD:
+        {
+            code += toString(this -> result);
+            code += " := ";
+            code += toString(this -> arg1);
+            code += " % ";
+            code += toString(this -> arg2);
+            code += "\n";
+            break;
+        }
         case DOP_GETVALUE:
         {
             code += toString(this -> result);
@@ -278,7 +286,12 @@ std::string InterCode::printCode()
         {
             code += "FUNCTION ";
             code += this -> result.name;
-            code += ":\n";
+            code += " :\n";
+            break;
+        }
+        case FUNC_CALL:
+        {
+            // to be completed
             break;
         }
         case ARRAY_DECLARATION:
@@ -505,7 +518,6 @@ VarPair Varlistnode::findVar(std::string name)
         std::vector<VarPair>* list = &(temp -> varlist);
         for (auto iter = list -> begin(); iter != list -> end(); iter ++)
         {
-            // printf("%s\n", (iter -> name).c_str());
             if (name == iter -> name)
                 return VarPair(iter -> type, iter -> index, iter -> name);
         }
@@ -594,10 +606,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
                 exit(-1);
                 // error: variable undefined
             }
-            else
-            {
-
-            }
         }
         else if (right -> msg == "Const Declaration")
         {
@@ -639,10 +647,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
                 exit(-1);
                 // error: can't be a left value
             }
-            else
-            {
-                
-            }
         }
         else if (left -> msg == "Const Declaration")
         {
@@ -672,10 +676,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
                 printf("error: variable undefined\n");
                 exit(-1);
                 // error: variable undefined
-            }
-            else
-            {
-                
             }
         }
         else if (right -> msg == "Const Declaration")
@@ -721,10 +721,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
                 exit(-1);
                 // error: can't be a left value
             }
-            else
-            {
-                
-            }
         }
         else if (left -> msg == "Const Declaration")
         {
@@ -754,10 +750,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
                 printf("error: variable undefined\n");
                 exit(-1);
                 // error: variable undefined
-            }
-            else
-            {
-                
             }
         }
         else if (right -> msg == "Const Declaration")
@@ -822,10 +814,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
                 exit(-1);
                 // error: can't be a left value
             }
-            else
-            {
-                
-            }
         }
         else if (left -> msg == "Const Declaration")
         {
@@ -855,10 +843,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
                 printf("error: variable undefined\n");
                 exit(-1);
                 // error: variable undefined
-            }
-            else
-            {
-                
             }
         }
         else if (right -> msg == "Const Declaration")
@@ -931,10 +915,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
                 exit(-1);
                 // error: variable undefined
             }
-            else
-            {
-                
-            }
         }
         else
         {
@@ -951,10 +931,6 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
                 printf("error: variable undefined\n");
                 exit(-1);
                 // error: variable undefined
-            }
-            else
-            {
-                
             }
         }
         else if (right -> msg == "Const Declaration")
@@ -1082,10 +1058,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 exit(-1);
                 // error: variable undefined
             }
-            else
-            {
-                
-            }
         }
         else if (left -> msg == "Const Declaration")
         {
@@ -1115,10 +1087,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 printf("error: variable undefined\n");
                 exit(-1);
                 // error: variable undefined
-            }
-            else
-            {
-                
             }
         }
         else if (right -> msg == "Const Declaration")
@@ -1184,10 +1152,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 exit(-1);
                 // error: variable undefined
             }
-            else
-            {
-                
-            }
         }
         else if (left -> msg == "Const Declaration")
         {
@@ -1217,10 +1181,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
                 printf("error: variable undefined\n");
                 exit(-1);
                 // error: variable undefined
-            }
-            else
-            {
-                
             }
         }
         else if (right -> msg == "Const Declaration")
@@ -1301,10 +1261,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
             exit(-1);
             // error: variable undefined
         }
-        else
-        {
-            
-        }
         VarPair zero_temp;
         int temp_index = this -> checkConst(0);
         if(temp_index == -1)
@@ -1354,10 +1310,6 @@ void InterCodeList::makeConditions(ASTNode* condition, VarPair success, VarPair 
             (this -> list).push_back(InterCode(const_temp, zero_temp, FJUMP_UNEQUAL, failure));
         if (codetype == 0)
             (this -> list).push_back(InterCode(GOTO, failure));
-    }
-    else
-    {
-
     }
 };
 
@@ -1731,10 +1683,6 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                     printf("%s\n", arrname -> name.c_str());
                     printf("error: is not an array\n");
                 }
-                else
-                {
-                
-                }
             }
             else
             {
@@ -1751,10 +1699,6 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                     printf("error: variable undefined\n");
                     exit(-1);
                     // error: variable undefined
-                }
-                else
-                {
-                    
                 }
             }
             else if (targetidx -> msg == "Const Declaration")
@@ -1887,10 +1831,6 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                         exit(-1);
                         // error: xxx is not an array
                     }
-                    else
-                    {
-                    
-                    }
                 }
                 else
                 {
@@ -1907,10 +1847,6 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                         printf("error: variable undefined\n");
                         exit(-1);
                         // error: variable undefined
-                    }
-                    else
-                    {
-                        
                     }
                 }
                 else if (targetidx -> msg == "Const Declaration")

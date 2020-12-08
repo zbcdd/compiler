@@ -1,11 +1,11 @@
 #include <vector>
 #include <string>
 #include <stdlib.h>
+#include <stdio.h>
 #include <stdbool.h>
 #include <unordered_map>
 #include <iostream>
 #include <sstream>
-#include <fstream>
 #include "../ast/AST.h"
 
 enum ARGTYPE

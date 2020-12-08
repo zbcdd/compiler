@@ -5,7 +5,7 @@
 
 int main() {
     int a = 1;
-    int b[2] = {a, a};
+    int b = 2;
     // cin >> a >> b;
     // a || (b = c);
     // if (a >= b || a < b && a == b) {
@@ -19,5 +19,5 @@ int main() {
     // {
     //     cout << c;
     // }
-    return 0;
+    return a % b;
 }
