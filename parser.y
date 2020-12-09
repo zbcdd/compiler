@@ -3,6 +3,7 @@
 #include<stdlib.h>
 #include<stdbool.h>
 #include<string.h>
+#include"./symtab/fssymtab.h"
 #include"./intercode/intercode.h"
 
 #define ID_DEC "ID Declaration"
@@ -17,6 +18,9 @@ int idx = 0;
 symtab_list* list_ptr;
 ASTNode* ASTroot;
 InterCodeList ic_list = InterCodeList();
+func_symtab* func_set = new func_symtab();
+ASTNode* cur_func;
+int struct_cnt = 0;
 %}
 %union {
     ASTNode* node;
@@ -43,7 +47,7 @@ InterCodeList ic_list = InterCodeList();
 %type<node> statement compound_statement block_item_list block_item expression_statement 
 %type<node> selection_statement iteration_statement jump_statement translation_unit external_declaration 
 %type<node> function_definition
-%type<node> enter_scope
+%type<node> enter_scope add_func
 
 
 %locations
@@ -72,12 +76,25 @@ postfix_expression
         $$ -> addChild($1);  $$ -> addChild($3);
     }
 	| postfix_expression '(' ')' {
-        $$ = new ASTNode(NodeType::FUNC_CALL, "Funcation Call", idx ++, "no param");
+        $$ = new ASTNode(NodeType::FUNC_CALL, "Function Call", idx ++, "no param");
         $$ -> addChild($1);
+        std::string name = $1 -> name;
+        if (func_set -> check_func(name, 0) == 0) {
+            std::string error_msg = "未定义的函数(请检查函数名或参数是否正确): ";
+            error_msg += name;
+            yyerror(error_msg.c_str());
+        }
     }
 	| postfix_expression '(' argument_expression_list ')'{
-        $$ = new ASTNode(NodeType::FUNC_CALL, "Functaion Call", idx ++, "have params");
+        $$ = new ASTNode(NodeType::FUNC_CALL, "Function Call", idx ++, "have params");
         $$ -> addChild($1); $$ -> addChild($3);
+        std::string name = $1 -> name;
+        int cnt = $3 -> getChildren() -> size();
+        if (func_set -> check_func(name, cnt) == 0) {
+            std::string error_msg = "未定义的函数(请检查函数名或参数是否正确): ";
+            error_msg += name;
+            yyerror(error_msg.c_str());
+        }
     }
 	| postfix_expression '.' IDENTIFIER {
         $$ = new ASTNode(NodeType::EXPR, "Struct Use", idx ++, "get_value_op:." );
@@ -413,15 +430,25 @@ type_specifier
 
 struct_or_union_specifier
 	: STRUCT IDENTIFIER '{' struct_declaration_list '}' {
-        $$ = new ASTNode(NodeType::TYPE_SPECIFIER, "Type Specifier", idx ++, "struct");
+        std::string name($2);
+        name = name.substr(0, name.find("{"));
+        name = name.substr(0, name.find(" "));
+        $$ = new ASTNode(NodeType::TYPE_SPECIFIER, "Struct", idx ++, name);
         $$ -> addChild($4);
+
     }
 	| STRUCT '{' struct_declaration_list '}' {
-        $$ = new ASTNode(NodeType::TYPE_SPECIFIER, "Type Specifier", idx ++, "struct");
+        std::string name = "anon_struct_";  // 匿名struct
+        std::string num = std::to_string(struct_cnt);
+        name += num;
+        $$ = new ASTNode(NodeType::TYPE_SPECIFIER, "Struct", idx ++, name);
         $$ -> addChild($3);
     }
 	| STRUCT IDENTIFIER {
-        $$ = new ASTNode(NodeType::TYPE_SPECIFIER, "Type Specifier", idx ++, "struct");
+        std::string name($2);
+        name = name.substr(0, name.find("{"));
+        name = name.substr(0, name.find(" "));
+        $$ = new ASTNode(NodeType::TYPE_SPECIFIER, "Struct", idx ++, name);
     }
 	;
 
@@ -457,6 +484,7 @@ struct_declarator_list
 declarator
 	: direct_declarator {
         $$ = $1;
+        cur_func = $$;
     }
 	;
 
@@ -737,11 +765,26 @@ external_declaration
 	;
 
 function_definition
-	: type_specifier declarator compound_statement {
+	: type_specifier declarator add_func compound_statement {
         $$ = new ASTNode(NodeType::FUNC_DEFINITION, "Function Definition", idx ++);
-        $$ -> addChild($1); $$ -> addChild($2); $$ -> addChild($3);
+        $$ -> addChild($1); $$ -> addChild($2); $$ -> addChild($4);
     }
 	;
+
+add_func
+    : {
+        std::string name;
+        int cnt = 0;
+        if (cur_func -> msg == "Var Declaration") {
+            name = cur_func -> name;
+        } else if (cur_func -> msg == "Function Declaration") {
+            name = (*(cur_func -> getChildren()))[0] -> name;
+            cnt = (*(cur_func -> getChildren()))[1] -> getChildren() -> size();
+        }
+        if (func_set -> add_func(name, cnt) == 0) {
+            yyerror("函数重复定义");
+        }
+    }
 
 /* declaration_list
 	: declaration {
