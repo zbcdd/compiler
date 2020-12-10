@@ -76,10 +76,16 @@ public:
     ARGTYPE type;
     int index;
     std::string name;
+    int param_num;
+    ASTNode* func_body;
+    std::vector<std::string>* params_list;
     VarPair();
     VarPair(ARGTYPE type, int index);
     VarPair(ARGTYPE type, std::string name);
     VarPair(ARGTYPE type, int index, std::string name);
+    VarPair(ARGTYPE type, int index, std::string name, int param_num, ASTNode* func_body);
+    VarPair(ARGTYPE type, int index, std::string name, int param_num, std::vector<std::string>* params_list, ASTNode* func_body);
+
 };
 
 class InterCode 
@@ -104,7 +110,6 @@ public:
     OPTYPE getOperator();
     VarPair getArgFirst();
     VarPair getArgSecond();
-
     std::string printCode();
 };
 
@@ -118,6 +123,7 @@ public:
     Varlistnode(Varlistnode* father);
     void addVar(VarPair vp);
     VarPair findVar(std::string name);
+    bool isExternVar(std::string name);
     Varlistnode* getFather();
 };
 
@@ -128,16 +134,21 @@ private:
     static int temp_count;                  // counter for TEMP
     static int var_count;                   // counter for VAR
     static int arr_count;                   // counter for ARR
+    static int func_count;                  // counter for FUNC
     std::vector<InterCode> list;
     Varlistnode* root_list;
     std::unordered_map<int, int> constant_pool;
+    std::vector<VarPair> function_table;
     void classify();
     void arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_result);
     void fake_arithmetic(ASTNode* root, Varlistnode* vlist);
     void makeConditions(ASTNode* condition, VarPair success, VarPair failure, int codetype, Varlistnode* vlist);
     void addConst(int value, int index);
     int checkConst(int value);
-    void read(ASTNode* root, Varlistnode* vlist, VarPair break_label, VarPair continue_label);
+    void read(ASTNode* root, Varlistnode* vlist, VarPair break_label, VarPair continue_label, VarPair return_value, VarPair over_label);
+    void addFunc(VarPair func);
+    VarPair findFunc(std::string func_name, int param_num);
+    void callFunc(VarPair func, std::vector<VarPair>* params, Varlistnode* vlist, VarPair return_value, VarPair over_label);
     void label_recycle();
 public:
     InterCodeList();
