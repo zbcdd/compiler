@@ -14,11 +14,13 @@ extern int yylex();
 extern FILE * yyin;
 extern int yylineno;
 void yyerror(const char *str);
+void get_var(ASTNode* root, struct_node* node);
 int idx = 0;
 symtab_list* list_ptr;
 ASTNode* ASTroot;
 InterCodeList ic_list = InterCodeList();
 func_symtab* func_set = new func_symtab();
+struct_symtab* struct_tab = new struct_symtab();
 ASTNode* cur_func;
 int struct_cnt = 0;
 %}
@@ -435,7 +437,14 @@ struct_or_union_specifier
         name = name.substr(0, name.find(" "));
         $$ = new ASTNode(NodeType::TYPE_SPECIFIER, "Struct", idx ++, name);
         $$ -> addChild($4);
-
+        // 增加struct记录
+        struct_node* node = new struct_node();
+        ASTNode* r_node = $4;
+        get_var(r_node, node);
+        int res = struct_tab -> add_struct(name, node);
+        if (res < 0) {
+            yyerror("struct重复定义");
+        }
     }
 	| STRUCT '{' struct_declaration_list '}' {
         std::string name = "anon_struct_";  // 匿名struct
@@ -443,6 +452,14 @@ struct_or_union_specifier
         name += num;
         $$ = new ASTNode(NodeType::TYPE_SPECIFIER, "Struct", idx ++, name);
         $$ -> addChild($3);
+        // 增加struct记录
+        struct_node* node = new struct_node();
+        ASTNode* r_node = $3;
+        get_var(r_node, node);
+        int res = struct_tab -> add_struct(name, node);
+        if (res < 0) {
+            yyerror("struct重复定义");
+        }
     }
 	| STRUCT IDENTIFIER {
         std::string name($2);
@@ -806,6 +823,21 @@ void yyerror(const char* s) {
 	exit(1);
 }
 
+void get_var(ASTNode* root, struct_node* node) {
+    if (root -> msg == "Var Declaration") {
+        int res = node -> add_var(root -> name);
+        if (res < 0) {
+            printf("struct中变量重复定义\n");
+            yyerror((root->name).c_str());
+        }
+        return;
+    }
+    std::vector<ASTNode*>* children = root -> getChildren();
+    for (int i = 0; i < children -> size(); i ++) {
+        get_var((*children)[i], node);
+    }
+}
+
 int main(int argc, char* argv[])
 {
     list_ptr = new symtab_list();
@@ -834,9 +866,9 @@ int main(int argc, char* argv[])
        if (ret) printf("PARSER ERROR!!!");
     } while (!feof(yyin));
     ASTroot -> printTree(ASTroot, 0, false, "");
+    struct_tab -> print();
     ic_list.read(ASTroot);
     ic_list.printCodeList();
-    // list_ptr -> print_symtab_list(); 未完成
     return 0;
 }
 
