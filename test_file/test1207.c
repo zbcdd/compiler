@@ -1,36 +1,9 @@
-
-// int func() {
-//     int a = 3;
-//     return a + b;
-// }
+int func(int n, int m) {
+    return n + m;
+}
 
 int main() {
-    int n;
-    cin >> n;
-    int i;
-    for (i = 1; i <= n; i = i + 1)
-    {
-        if (i % 2)
-        {
-            cout << 1;
-        }
-        else
-        {
-            cout << -1;
-        }
-    }
-    // cin >> a >> b;
-    // a || (b = c);
-    // if (a >= b || a < b && a == b) {
-    //     cout << a;
-    // }
-    // else if (a != b)
-    // {
-    //     cout << b;
-    // }
-    // else
-    // {
-    //     cout << c;
-    // }
+    int n = 2;
+    func(4, 5);
     return 0;
 }

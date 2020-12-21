@@ -51,6 +51,11 @@ struct_node* struct_symtab::get_struct(string name)
     return NULL;
 }
 
+int struct_node::get_size()
+{
+    return this->cur_idx;
+};
+
 void struct_node::print()
 {
     for (auto iter = (this->si_map).begin(); iter != (this->si_map).end(); iter++) {

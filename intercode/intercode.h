@@ -7,16 +7,19 @@
 #include <iostream>
 #include <sstream>
 #include "../ast/AST.h"
+#include"../symtab/fssymtab.h"
 
 enum ARGTYPE
 {
     NULL_ARG = 0,       // null
     TEMP,               // temp
     VAR,                // var
+    FUNC_MAIN,          // FUNCTION main
     FUNC,               // FUNCTION
-    ARG_CONSTANT,           // #
+    ARG_CONSTANT,       // #
     ARR,                // arr
     LABEL,              // label
+    ARG_STRUCT,         // struct
 };
 
 enum USAGE
@@ -56,8 +59,9 @@ enum OPTYPE
     FJUMP_UNEQUAL,      // IFNOT != GOTO
     FJUMP_LOE,          // IFNOT <= GOTO
     FJUMP_SOE,          // IFNOT >= GOTO
-    FUNC_DEF,           // FUNCTION name
-    FUNCTION_CALL,      // CALL name
+    FUNC_DEF,           // FUNCTION func_name
+    END_FUNC,           // END func_name
+    FUNCTION_CALL,      // CALL func_name
     PARAM,              // PARAM
     ARG,                // ARG
     OP_LABEL,           // LABEL
@@ -76,10 +80,12 @@ public:
     ARGTYPE type;
     int index;
     std::string name;
+    std::string struct_name;
     VarPair();
     VarPair(ARGTYPE type, int index);
     VarPair(ARGTYPE type, std::string name);
     VarPair(ARGTYPE type, int index, std::string name);
+    VarPair(ARGTYPE type, int index, std::string var_name, std::string struct_name);
 };
 
 class InterCode 
@@ -128,6 +134,8 @@ private:
     static int temp_count;                  // counter for TEMP
     static int var_count;                   // counter for VAR
     static int arr_count;                   // counter for ARR
+    static int func_count;                  // counter for FUNC
+    struct_symtab* struct_tab;
     std::vector<InterCode> list;
     Varlistnode* root_list;
     std::unordered_map<int, int> constant_pool;
@@ -140,7 +148,7 @@ private:
     void read(ASTNode* root, Varlistnode* vlist, VarPair break_label, VarPair continue_label);
     void label_recycle();
 public:
-    InterCodeList();
+    InterCodeList(struct_symtab* tab);
     int getListSize();
     void read(ASTNode* root);
     void printCodeList();

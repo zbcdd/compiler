@@ -21,6 +21,7 @@ public:
     struct_node() {this -> cur_idx = 0;};
     int add_var(std::string name);
     int get_var(std::string name);
+    int get_size();
     void print();
 };
 

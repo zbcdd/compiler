@@ -3,7 +3,6 @@
 #include<stdlib.h>
 #include<stdbool.h>
 #include<string.h>
-#include"./symtab/fssymtab.h"
 #include"./intercode/intercode.h"
 
 #define ID_DEC "ID Declaration"
@@ -18,9 +17,9 @@ void get_var(ASTNode* root, struct_node* node);
 int idx = 0;
 symtab_list* list_ptr;
 ASTNode* ASTroot;
-InterCodeList ic_list = InterCodeList();
 func_symtab* func_set = new func_symtab();
 struct_symtab* struct_tab = new struct_symtab();
+InterCodeList ic_list = InterCodeList(struct_tab);
 ASTNode* cur_func;
 int struct_cnt = 0;
 %}

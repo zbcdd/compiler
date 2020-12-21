@@ -17,6 +17,7 @@ VarPair::VarPair()
     this -> index = -1;
     this -> name = "";
     this -> usage = ORIGIN;
+    this -> struct_name = "";
 };
 
 VarPair::VarPair(ARGTYPE type, int index)
@@ -25,6 +26,7 @@ VarPair::VarPair(ARGTYPE type, int index)
     this -> index = index;
     this -> name = "";
     this -> usage = ORIGIN;
+    this -> struct_name = "";
 };
 
 VarPair::VarPair(ARGTYPE type, std::string name)
@@ -33,6 +35,7 @@ VarPair::VarPair(ARGTYPE type, std::string name)
     this -> index = -1;
     this -> name = name;
     this -> usage = ORIGIN;
+    this -> struct_name = "";
 };
 
 VarPair::VarPair(ARGTYPE type, int index, std::string name)
@@ -41,12 +44,22 @@ VarPair::VarPair(ARGTYPE type, int index, std::string name)
     this -> index = index;
     this -> name = name;
     this -> usage = ORIGIN;
+    this -> struct_name = "";
+};
+
+VarPair::VarPair(ARGTYPE type, int index, std::string var_name, std::string struct_name)
+{
+    this -> type = type;
+    this -> index = index;
+    this -> name = var_name;
+    this -> usage = ORIGIN;
+    this -> struct_name = struct_name;
 };
 
 // class InterCode
 std::string InterCode::toString(VarPair arg)
 {
-    std::string p1, p2, p3;
+    std::string p1, p2, p3 = "";
     switch (arg.usage)
     {
         case ORIGIN:
@@ -93,7 +106,17 @@ std::string InterCode::toString(VarPair arg)
             p2 = "array";
             break;
         }
+        case ARG_STRUCT:
+        {
+            p2 = "array";
+            break;
+        }
         case FUNC:
+        {
+            p2 = "func";
+            break;
+        }
+        case FUNC_MAIN:
         {
             p2 = arg.name;
             break;
@@ -110,7 +133,8 @@ std::string InterCode::toString(VarPair arg)
             break;
         }
     }
-    p3 = itos(arg.index);
+    if (arg.type != FUNC_MAIN) 
+        p3 = itos(arg.index);
     std::string ss = p1 + p2 + p3;
     return ss;
 };
@@ -285,13 +309,35 @@ std::string InterCode::printCode()
         case FUNC_DEF:
         {
             code += "FUNCTION ";
-            code += this -> result.name;
+            code += toString(this -> result);
             code += " :\n";
             break;
         }
-        case FUNC_CALL:
+        case PARAM:
         {
-            // to be completed
+            code += "PARAM ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case END_FUNC:
+        {
+            code += "END\n";
+            break;
+        }
+        case ARG:
+        {
+            code += "ARG ";
+            code += toString(this -> result);
+            code += "\n";
+            break;
+        }
+        case FUNCTION_CALL:
+        {
+            code += toString(this -> result);
+            code += " := CALL ";
+            code += toString(this -> arg1);
+            code += "\n";
             break;
         }
         case ARRAY_DECLARATION:
@@ -312,20 +358,6 @@ std::string InterCode::printCode()
         case OP_PRINT:
         {
             code += "CALL cout\n";
-            break;
-        }
-        case PARAM:
-        {
-            code += "RARAM ";
-            code += toString(this -> result);
-            code += "\n";
-            break;
-        }
-        case ARG:
-        {
-            code += "ARG ";
-            code += toString(this -> result);
-            code += "\n";
             break;
         }
         case OP_LABEL:
@@ -519,7 +551,7 @@ VarPair Varlistnode::findVar(std::string name)
         for (auto iter = list -> begin(); iter != list -> end(); iter ++)
         {
             if (name == iter -> name)
-                return VarPair(iter -> type, iter -> index, iter -> name);
+                return *iter;
         }
         if (temp -> father != NULL)
             temp = temp -> father;
@@ -542,6 +574,8 @@ int InterCodeList::temp_count = 0;
 int InterCodeList::var_count = 0;  
 
 int InterCodeList::arr_count = 0;
+
+int InterCodeList::func_count = 0;
 
 void InterCodeList::classify()
 {
@@ -968,6 +1002,114 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         (this -> list).push_back(InterCode(right_value, width, DOP_MULTIPLY, raddress));
         (this -> list).push_back(InterCode(left_value, raddress, op, temp_result));
     }
+    else if (root -> msg == "Function Call")
+    {
+        std::vector<ASTNode*>* arglist = right -> getChildren();
+        std::vector<VarPair> args;
+        for (auto iter = arglist -> begin(); iter != arglist -> end(); iter++)
+        {
+            VarPair arg_temp = VarPair(TEMP, temp_count++);
+            if ((*iter) -> msg == "Const Declaration")
+            {
+                int const_value = atoi((*iter) -> name.c_str());
+                // int temp_index = this -> checkConst(const_value);
+                // if(temp_index == -1)
+                // {
+                //     this -> addConst(const_value, temp_count);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, arg_temp));
+            }
+            else if ((*iter) -> msg == "ID Declaration")
+            {
+                VarPair id = vlist -> findVar((*iter) -> name);
+                if (id.type == NULL_ARG)
+                {
+                    printf("%s\n", ((*iter) -> name).c_str());
+                    printf("error: var not defined.\n");
+                    exit(-1);
+                    // error: variable undefined
+                }
+                else
+                    (this -> list).push_back(InterCode(id, DOP_ASSIGNMENT, arg_temp));
+            }
+            else
+                this -> arithmetic(*iter, vlist, arg_temp);
+            args.push_back(arg_temp);
+        }
+        VarPair func = vlist -> findVar(left -> name);
+        if (func.type == NULL_ARG)
+        {
+            printf("%s\n", (left -> name).c_str());
+            printf("error: function not defined.\n");
+            exit(-1);
+            // error: function undefined
+        }
+        else if (func.type != FUNC)
+        {
+            printf("%s\n", (left -> name).c_str());
+            printf("error: not a function.\n");
+            exit(-1);
+            // error: not a function
+        }
+        else
+        {
+            for (auto iter = args.begin(); iter != args.end(); iter++)
+            {
+                (this -> list).push_back(InterCode(ARG, *iter));
+            }
+            (this -> list).push_back(InterCode(func, FUNCTION_CALL, temp_result));
+        }
+    }
+    else if (root -> msg == "Struct Use")
+    {
+        if (left -> msg != "ID Declaration")
+        {
+            printf("error: \'.\' wrong left value type.\n");
+            exit(-1);
+            // error: '.' wrong left value type.
+        }
+        if (right -> msg != "ID Declaration")
+        {
+            printf("error: \'.\' wrong right value type.\n");
+            exit(-1);
+            // error: '.' wrong right value type.
+        }
+        VarPair struct_var = vlist -> findVar(left -> name);
+        if (struct_var.type == NULL_ARG)
+        {
+            printf("%s\n", left -> name.c_str());
+            printf("error: variable undefined\n");
+            exit(-1);
+            // error: variable undefined
+        }
+        else if (struct_var.type != ARG_STRUCT)
+        {
+            printf("%s\n", left -> name.c_str());
+            printf("error: is not a struct variable.\n");
+            exit(-1);
+            // error: is not a struct variable
+        }
+        int member = this -> struct_tab -> get_struct(struct_var.struct_name) -> get_var(right -> name);
+        if (member == -1)
+        {
+            printf("error: \'%s\' ", left -> name.c_str());
+            printf("doesn't have a member named \'%s\'\n", right -> name.c_str());
+            exit(-1);
+            // error: is not a struct variable
+        }
+        VarPair int_size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
+        VarPair idx_const = VarPair(ARGTYPE::ARG_CONSTANT, member);
+        VarPair size_temp = VarPair(TEMP, temp_count++);
+        VarPair idx_temp = VarPair(TEMP, temp_count++);
+        VarPair raddress = VarPair(TEMP, temp_count++);
+        VarPair left_value = VarPair(TEMP, temp_count++);
+        (this -> list).push_back(InterCode(int_size, DOP_ASSIGNMENT, size_temp));
+        (this -> list).push_back(InterCode(idx_const, DOP_ASSIGNMENT, idx_temp));
+        (this -> list).push_back(InterCode(size_temp, idx_temp, DOP_MULTIPLY, raddress));
+        (this -> list).push_back(InterCode(struct_var, raddress, DOP_GETVALUE, left_value));
+        left_value.usage = CONTENT;
+        (this -> list).push_back(InterCode(left_value, DOP_ASSIGNMENT, temp_result));
+    }
     else
     {
         printf("arithmetic: error: there shouldn't be other possibilities\n");
@@ -978,7 +1120,8 @@ void InterCodeList::arithmetic(ASTNode* root, Varlistnode* vlist, VarPair temp_r
         left_value.usage = CONTENT;
     if (right -> msg == "Expr")
         right_value.usage = CONTENT;
-    if (root -> msg != "Expr" && root -> msg != "Pow Expression")
+    if (root -> msg != "Expr" && root -> msg != "Pow Expression" 
+    && root -> msg != "Function Call" && root -> msg != "Struct Use")
         (this -> list).push_back(InterCode(left_value, right_value, op, temp_result));
 };
 
@@ -1369,38 +1512,56 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             this -> read(*iter, vlist, break_label, continue_label);
         }
     }
+    else if (root -> msg == "Struct")
+    {
+        // do nothing
+    }
     else if (root -> msg == "Function Definition")
     {
-        InterCode* temp = new InterCode();
-        temp -> setOperator(FUNC_DEF);
-        if ((*(root -> getChildren()))[1] -> msg == "Var Declaration")
+        ASTNode* classifier = (*(root -> getChildren()))[1];
+        if (classifier -> msg == "Var Declaration")  // No-Param Function
         {
-            temp -> setResult(VarPair(FUNC, (*(root -> getChildren()))[1] -> name));
-            (this -> list).push_back(*temp);
-            this -> read((*(root -> getChildren()))[2], vlist, break_label, continue_label);
-            // not the final version
+            if (classifier -> name == "main")
+            {
+                VarPair func_main = VarPair(FUNC_MAIN, "main");
+                (this -> list).push_back(InterCode(FUNC_DEF, func_main));
+                Varlistnode* new_list = new Varlistnode(vlist);
+                this -> read((*(root -> getChildren()))[2], new_list, break_label, continue_label);
+                (this -> list).push_back(InterCode(END_FUNC, func_main));
+            }
+            else
+            {
+                VarPair func_no_param = VarPair(FUNC, func_count++);
+                vlist -> addVar(func_no_param);
+                (this -> list).push_back(InterCode(FUNC_DEF, func_no_param));
+                Varlistnode* new_list = new Varlistnode(vlist);
+                this -> read((*(root -> getChildren()))[2], new_list, break_label, continue_label);
+                (this -> list).push_back(InterCode(END_FUNC, func_no_param));
+            }
         }
-        else if ((*(root -> getChildren()))[1] -> msg == "Function Declaration")
+        else if (classifier -> msg == "Function Declaration")
         {
-            ASTNode* nodeptr = (*(root -> getChildren()))[1];
-            temp -> setResult(VarPair(FUNC, (*(nodeptr -> getChildren()))[0] -> name));
-            (this -> list).push_back(*temp);
-            // this -> read((*(nodeptr -> getChildren()))[1], vlist);
-            // to be completed
+            VarPair func_with_params = VarPair(FUNC, func_count++, (*(classifier -> getChildren()))[0] -> name);
+            vlist -> addVar(func_with_params);
+            (this -> list).push_back(InterCode(FUNC_DEF, func_with_params));
+            Varlistnode* new_list = new Varlistnode(vlist);
+            std::vector<ASTNode*>* paramlist = (*(classifier -> getChildren()))[1] -> getChildren();
+            for (auto iter = paramlist -> begin(); iter != paramlist -> end(); iter ++)
+            {
+                std::string param_name = (*(*iter) -> getChildren())[1] -> name;
+                VarPair param_vp = VarPair(VAR, var_count++, param_name);
+                new_list -> addVar(param_vp);
+                (this -> list).push_back(InterCode(PARAM, param_vp));
+            }
+            this -> read((*(root -> getChildren()))[2], new_list, break_label, continue_label);
+            (this -> list).push_back(InterCode(END_FUNC, func_with_params));
         }
-    }
-    else if (root -> msg == "Parameter Declaration List")
-    {
-        std::vector<ASTNode*>* temp = root -> getChildren();
-        for (auto iter = (*temp).begin(); iter != (*temp).end(); iter ++)
+        else
         {
-            // this -> read(*iter);
-            // to be completed
+            printf("Function Definition: error: there shouldn't be other possibilities\n");
+            exit(-1);
+            // error: there shouldn't be other possibilities
         }
-    }
-    else if (root -> msg == "Parameter Declaration")
-    {
-        // to be completed
     }
     else if (root -> msg == "Compound Statement") 
     {
@@ -1413,7 +1574,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
     }
     else if (root -> msg == "Var Declaration") 
     {
-        if ((*(root -> getChildren()))[0] -> name == "int")
+        if ((*(root -> getChildren()))[0] -> msg == "Type Specifier")
         {
             std::vector<ASTNode*>* vars = (*(root -> getChildren()))[1] -> getChildren();
             for (auto iter = vars -> begin(); iter != vars -> end(); iter ++)
@@ -1528,7 +1689,7 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                         if (arrname_node -> msg != "Var Declaration")
                         {
                             printf("%s\n", (arrname_node -> name).c_str());
-                            printf("error: cannot lead '[]'\n");
+                            printf("error: cannot lead \'[]\'\n");
                             exit(-1);
                             // error: cannot lead '[]'
                         }
@@ -1629,6 +1790,38 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
                     }
                 }
             }
+        }
+        else if ((*(root -> getChildren()))[0] -> msg == "Struct")
+        {
+            std::vector<ASTNode*>* struct_vars = (*(root -> getChildren()))[1] -> getChildren();
+            std::string struct_name = (*(root -> getChildren()))[0] -> name;
+            for (auto iter = struct_vars -> begin(); iter != struct_vars -> end(); iter++)
+            {
+                if ((*iter) -> msg != "Var Declaration")
+                {
+                    printf("error: wrong type with \'struct\'\n");
+                    exit(-1);
+                    // error: wrong type with 'struct'
+                }
+                VarPair struct_arr = VarPair(ARG_STRUCT, arr_count++, (*iter) -> name, struct_name);
+                vlist -> addVar(struct_arr);
+                VarPair int_size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
+                VarPair size_temp = VarPair(TEMP, temp_count++);
+                (this -> list).push_back(InterCode(int_size, DOP_ASSIGNMENT, size_temp));
+                int width = this -> struct_tab -> get_struct(struct_name) -> get_size();
+                VarPair width_const = VarPair(ARGTYPE::ARG_CONSTANT, width);
+                VarPair width_temp = VarPair(TEMP, temp_count++);
+                (this -> list).push_back(InterCode(width_const, DOP_ASSIGNMENT, width_temp));
+                VarPair space = VarPair(TEMP, temp_count++);
+                (this -> list).push_back(InterCode(size_temp, width_temp, DOP_MULTIPLY, space));
+                (this -> list).push_back(InterCode(space, ARRAY_DECLARATION, struct_arr));
+            }
+        }
+        else
+        {
+            printf("error: Var Declaration: there shouldn't be other possibilities.\n");
+            exit(-1);
+            // error: Var Declaration: there shouldn't be other possibilities
         }
     }
     else if (root -> msg == "Assignment Expression")
@@ -1793,6 +1986,91 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             (this -> list).push_back(InterCode(idxtemp, width, DOP_MULTIPLY, raddress));
             (this -> list).push_back(InterCode(arrpair, raddress, DOP_GETVALUE, left_value));
             left_value.usage = CONTENT;
+            if (right -> msg == "Expr")
+                right_value.usage = CONTENT;
+            (this -> list).push_back(InterCode(right_value, DOP_ASSIGNMENT, left_value));
+        }
+        else if (left -> msg == "Struct Use")
+        {
+            ASTNode* struct_var_node = (*(left -> getChildren()))[0];
+            ASTNode* member_node = (*(left -> getChildren()))[1];
+            if (struct_var_node -> msg != "ID Declaration")
+            {
+                printf("error: \'.\' wrong left value type.\n");
+                exit(-1);
+                // error: '.' wrong left value type.
+            }
+            if (member_node -> msg != "ID Declaration")
+            {
+                printf("error: \'.\' wrong right value type.\n");
+                exit(-1);
+                // error: '.' wrong right value type.
+            }
+            VarPair struct_var = vlist -> findVar(struct_var_node -> name);
+            if (struct_var.type == NULL_ARG)
+            {
+                printf("%s\n", struct_var_node -> name.c_str());
+                printf("error: variable undefined\n");
+                exit(-1);
+                // error: variable undefined
+            }
+            else if (struct_var.type != ARG_STRUCT)
+            {
+                printf("%s\n", struct_var.struct_name.c_str());
+                printf("error: is not a struct variable.\n");
+                exit(-1);
+                // error: is not a struct variable
+            }
+            int member = this -> struct_tab -> get_struct(struct_var.struct_name) -> get_var(member_node -> name);
+            if (member == -1)
+            {
+                printf("error: \'%s\' ", left -> name.c_str());
+                printf("doesn't have a member named \'%s\'\n", member_node -> name.c_str());
+                exit(-1);
+                // error: is not a struct variable
+            }
+            VarPair int_size = VarPair(ARGTYPE::ARG_CONSTANT, 4);
+            VarPair idx_const = VarPair(ARGTYPE::ARG_CONSTANT, member);
+            VarPair size_temp = VarPair(TEMP, temp_count++);
+            VarPair idx_temp = VarPair(TEMP, temp_count++);
+            VarPair raddress = VarPair(TEMP, temp_count++);
+            VarPair left_value = VarPair(TEMP, temp_count++);
+            (this -> list).push_back(InterCode(int_size, DOP_ASSIGNMENT, size_temp));
+            (this -> list).push_back(InterCode(idx_const, DOP_ASSIGNMENT, idx_temp));
+            (this -> list).push_back(InterCode(size_temp, idx_temp, DOP_MULTIPLY, raddress));
+            (this -> list).push_back(InterCode(struct_var, raddress, DOP_GETVALUE, left_value));
+            left_value.usage = CONTENT;
+            VarPair right_value;
+            if (right -> msg == "ID Declaration")
+            {
+                right_value = vlist -> findVar(right -> name);
+                if (right_value.type == NULL_ARG)
+                {
+                    printf("%s\n", right -> name.c_str());
+                    printf("error: variable undefined\n");
+                    exit(-1);
+                    // error: variable undefined
+                }
+            }
+            else if (right -> msg == "Const Declaration")
+            {
+                int const_value = atoi(right -> name.c_str());
+                int temp_index = this -> checkConst(const_value);
+                // if(temp_index == -1)
+                // {
+                //     this -> addConst(const_value, temp_count);
+                right_value = VarPair(TEMP, temp_count++);
+                VarPair constant = VarPair(ARGTYPE::ARG_CONSTANT, const_value);
+                (this -> list).push_back(InterCode(constant, DOP_ASSIGNMENT, right_value));
+                // }
+                //  else
+                //     right_value = VarPair(TEMP, temp_index);
+            }
+            else
+            {
+                right_value = VarPair(TEMP, temp_count++);
+                this -> arithmetic(right, vlist, right_value);
+            }
             if (right -> msg == "Expr")
                 right_value.usage = CONTENT;
             (this -> list).push_back(InterCode(right_value, DOP_ASSIGNMENT, left_value));
@@ -2120,6 +2398,11 @@ void InterCodeList::read(ASTNode* root, Varlistnode* vlist, VarPair break_label,
             // error: there shouldn't be other possibilities.
         }
     }
+    else if (root -> msg == "Function Call")
+    {
+        VarPair func_return = VarPair(TEMP, temp_count++);
+        this -> arithmetic(root, vlist, func_return);
+    }
     else if (root -> msg == "Empty Statement")
     {
         // do nothing
@@ -2180,9 +2463,10 @@ void InterCodeList::label_recycle()
 };
 
 // public
-InterCodeList::InterCodeList()
+InterCodeList::InterCodeList(struct_symtab* tab)
 {
     this -> root_list = new Varlistnode();
+    this -> struct_tab = tab;
 };
 
 int InterCodeList::getListSize()
