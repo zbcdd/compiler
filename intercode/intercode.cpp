@@ -551,7 +551,7 @@ VarPair Varlistnode::findVar(std::string name)
         for (auto iter = list -> begin(); iter != list -> end(); iter ++)
         {
             if (name == iter -> name)
-                return *iter;
+                return VarPair(iter -> type, iter -> index, iter -> name, iter -> struct_name);
         }
         if (temp -> father != NULL)
             temp = temp -> father;
